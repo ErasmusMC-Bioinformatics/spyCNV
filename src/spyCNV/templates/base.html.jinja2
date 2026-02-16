@@ -11,11 +11,17 @@
     <body>
         <h1>{{ sample_id }}</h1>
         <div id="visualization"></div>
-
-        <script type="module">
-         {{ genomespy_js }}
-
-         const spec = {{ spec | tojson }};
+        <script type="text/javascript" src="static/genome-spy_core@0.64.x.js"></script>
+        <script type="text/javascript" src="plots/ideogramTrack.js"></script>
+        <script type="text/javascript" src="plots/geneAnnotationTrack.js"></script>
+        <script>
+         const spec = {
+             "genome": { "name": "hg19" },
+             "vconcat": [
+                 ideogramTrack("hg19"),
+                 geneAnnotationTrack("hg19")
+             ]
+         };
 
          genomeSpyEmbed.embed(document.getElementById("visualization"), spec);
         </script>
