@@ -76,6 +76,7 @@
               venvShellHook
               pip
 
+              jinja2
               typer
 
               pkgs.ruff
