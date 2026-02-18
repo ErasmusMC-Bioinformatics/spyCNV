@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-import json
-
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 
 
 def read_file(file: str):
@@ -15,15 +13,9 @@ def write_file(file: str, content: str):
         f.write(content)
 
 
-def render(sample_id, spec):
-    js_content = read_file("static/genome-spy_core@0.64.x.js")
+def render(sample_id: str, spec: str) -> str:
 
-    env = Environment(loader=FileSystemLoader("templates"))
+    env = Environment(loader=PackageLoader("spyCNV", "templates"))
     template = env.get_template("base.html.jinja2")
-    html = template.render(sample_id=sample_id, genomespy_js=js_content, spec=spec)
+    html = template.render(sample_id=sample_id, spec=spec)
     return html
-
-
-sample_id = "M25-XXXXT"
-html = render(sample_id, json.dumps({1: "one", 2: "two"}))
-write_file(f"{sample_id}.html", html)
