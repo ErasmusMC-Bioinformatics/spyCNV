@@ -56,6 +56,18 @@
           default = pkgs.mkShellNoCC {
             venvDir = ".venv";
 
+            buildInputs = with pkgs; [
+              (writeShellScriptBin "dev" ''
+                fd -tf -e py | entr -c pytest
+              '')
+            ];
+            shellHook = ''
+              echo "========================================="
+              echo "| Available commands:                   |"
+              echo "|   dev - run pytest on src file change |"
+              echo "========================================="
+            '';
+
             postShellHook = ''
               venvVersionWarn() {
               	local venvVersion
@@ -70,6 +82,7 @@
               }
 
               venvVersionWarn
+              pip install -e . --quiet
             '';
 
             packages = with python.pkgs; [
@@ -77,8 +90,11 @@
               pip
 
               jinja2
+              pytest
               typer
 
+              pkgs.entr
+              pkgs.fd
               pkgs.ruff
               pkgs.ty
             ];
