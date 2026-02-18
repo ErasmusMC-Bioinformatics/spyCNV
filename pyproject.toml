@@ -5,7 +5,14 @@ version = "0.1.0"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["src"]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src/spyCNV*"]
+where = ["src"]
+
+[project.scripts]
+spy = "spyCNV.cli:app"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
