@@ -1,8 +1,9 @@
-ideogramTrack = (assembly, options = {}) => ({
+ideogramTrack = (cytobandValues, options = {}) => ({
     height: options.height ?? 24,
 
     data: {
-        url: `https://genomespy.app/data/genomes/${assembly}/cytoBand.${assembly}.tsv`
+        values: cytobandValues,
+        format: { type: "tsv" },
     },
 
     transform: [

@@ -1,4 +1,4 @@
-geneAnnotationTrack = (assembly, options = {}) => ({
+geneAnnotationTrack = (refseqGenes, options = {}) => ({
     name: "geneAnnotations",
 
     description: [
@@ -10,8 +10,9 @@ geneAnnotationTrack = (assembly, options = {}) => ({
     height: options.height ?? 70,
 
     data: {
-        url: `https://genomespy.app/data/genomes/${assembly}/refSeq_genes_scored_compressed.${assembly}.tsv`,
+        values: refseqGenes,
         format: {
+            type: "tsv",
             // Specify types explicitly. Skips type inference, which is a bit slow.
             parse: {
                 symbol: "string",
