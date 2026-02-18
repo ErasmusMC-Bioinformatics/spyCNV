@@ -11,10 +11,10 @@
     <body>
         <h1>{{ sample_id }}</h1>
         <div id="visualization"></div>
-        <script type="text/javascript" src="static/genome-spy_core@0.64.x.js"></script>
-        <script type="text/javascript" src="plots/ideogramTrack.js"></script>
-        <script type="text/javascript" src="plots/geneAnnotationTrack.js"></script>
+        <script type="text/javascript">{{ genomespy_js | safe }}</script>
+
         <script>
+         {{ plots_js | safe }}
          const spec = {
              "genome": { "name": "hg19" },
              "vconcat": [
