@@ -38,20 +38,14 @@ def render_html(sample_id: str, genome: str = "hg19") -> str:
     genomespy_js = _load_resource(["static", "genome-spy_core@0.70.0.js"])
     plots = {
         "ideogram": _load_resource(["plots", "ideogramTrack.js"]),
+        "baf": _load_resource(["plots", "bAlleleFrequencyTrack.js"]),
         "geneAnnotation": _load_resource(["plots", "geneAnnotationTrack.js"]),
     }
 
     data = {
         "cytoband": _load_tsv(["data", f"cytoBand.{genome}.tsv"]),
         "refseq": _load_tsv(["data", f"refSeq_genes_scored_compressed.{genome}.tsv"]),
-    }
-
-    spec = {
-        "genome": {"name": "hg19"},
-        "vconcat": [
-            f'ideogramTrack("{data["cytoband"]}")',
-            f'geneAnnotationTrack("{data["refseq"]}")',
-        ],
+        "baf": _load_test_json(),
     }
 
     html = template.render(
@@ -59,6 +53,5 @@ def render_html(sample_id: str, genome: str = "hg19") -> str:
         genomespy_js=genomespy_js,
         data=data,
         plots=plots,
-        spec=spec,
     )
     return html

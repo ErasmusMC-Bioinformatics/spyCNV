@@ -18,17 +18,20 @@
          //    {{ plot | safe }}
          // {% endfor %}
          {{ plots.ideogram }}
+         {{ plots.baf }}
          {{ plots.geneAnnotation }}
 
 
 
          // const spec = {{ spec | safe }};
          const cytobandData = {{ data.cytoband | tojson }};
+         const bafData = {{ data.baf | tojson }};
          const refseqGenes = {{ data.refseq | tojson }};
          const spec = {
              "genome": { "name": "hg19" },
              "vconcat": [
                  ideogramTrack(cytobandData),
+                 bAlleleFrequencyTrack(bafData),
                  geneAnnotationTrack(refseqGenes)
              ]
          };
