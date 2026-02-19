@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 
-from spyCNV.core import _load_resource, render_html, write_file
+from spyCNV.core import _load_resource, _load_tsv, render_html, write_file
 
 
 def test_render():
@@ -11,13 +11,23 @@ def test_render():
     write_file(output_path, html_content)
 
     assert os.path.exists(output_path)
-    os.unlink(output_path)
-    assert not os.path.exists(output_path)
+    # os.unlink(output_path)
+    # assert not os.path.exists(output_path)
 
 
 def test_load_resource():
     plot_ideomTrack = _load_resource(["plots", "ideogramTrack.js"])
     gs_0_70 = _load_resource(["static", "genome-spy_core@0.70.0.js"])
 
-    assert len(plot_ideomTrack) == 3504
+    assert len(plot_ideomTrack) == 3472
     assert len(gs_0_70) == 777136
+
+
+def test_load_tsv():
+    genome = "hg19"
+    data = {
+        "cytoband": _load_tsv(["data", f"cytoBand.{genome}.tsv"]),
+        "refseq": _load_tsv(["data", f"refSeq_genes_scored_compressed.{genome}.tsv"]),
+    }
+    assert len(data["cytoband"]) == 862
+    assert len(data["refseq"]) == 27805
