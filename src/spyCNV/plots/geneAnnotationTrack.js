@@ -12,7 +12,6 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
     data: {
         values: refseqGenes,
         format: {
-            type: "tsv",
             // Specify types explicitly. Skips type inference, which is a bit slow.
             parse: {
                 symbol: "string",
@@ -37,7 +36,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         },
         {
             type: "formula",
-            expr: "datum._start + datum.length",
+            expr: "datum._start + +datum.length",
             as: "_end"
         },
         // Centroid is used for centering the gene symbols
@@ -225,4 +224,4 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
             ]
         }
     ]
-})
+});

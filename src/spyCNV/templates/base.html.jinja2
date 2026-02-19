@@ -11,15 +11,25 @@
     <body>
         <h1>{{ sample_id }}</h1>
         <div id="visualization"></div>
-        <script type="text/javascript">{{ genomespy_js | safe }}</script>
+        <script>{{ genomespy_js | safe }}</script>
 
         <script>
-         {{ plots_js | safe }}
+         // {% for plot in plots_js %}
+         //    {{ plot | safe }}
+         // {% endfor %}
+         {{ plots.ideogram }}
+         {{ plots.geneAnnotation }}
+
+
+
+         // const spec = {{ spec | safe }};
+         const cytobandData = {{ data.cytoband | tojson }};
+         const refseqGenes = {{ data.refseq | tojson }};
          const spec = {
              "genome": { "name": "hg19" },
              "vconcat": [
-                 ideogramTrack("hg19"),
-                 geneAnnotationTrack("hg19")
+                 ideogramTrack(cytobandData),
+                 geneAnnotationTrack(refseqGenes)
              ]
          };
 
