@@ -14,23 +14,20 @@
         <script>{{ genomespy_js | safe }}</script>
 
         <script>
-         // {% for plot in plots_js %}
-         //    {{ plot | safe }}
-         // {% endfor %}
          {{ plots.ideogram }}
+         {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
 
-
-
-         // const spec = {{ spec | safe }};
          const cytobandData = {{ data.cytoband | tojson }};
+         const logratioData = {{ data.logratio | tojson }};
          const bafData = {{ data.baf | tojson }};
          const refseqGenes = {{ data.refseq | tojson }};
          const spec = {
              "genome": { "name": "hg19" },
              "vconcat": [
                  ideogramTrack(cytobandData),
+                 logratioTrack(logratioData),
                  bAlleleFrequencyTrack(bafData),
                  geneAnnotationTrack(refseqGenes)
              ]
