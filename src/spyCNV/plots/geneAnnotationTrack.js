@@ -12,6 +12,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
     data: {
         values: refseqGenes,
         format: {
+            type: "tsv",
             // Specify types explicitly. Skips type inference, which is a bit slow.
             parse: {
                 symbol: "string",

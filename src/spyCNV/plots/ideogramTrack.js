@@ -3,6 +3,7 @@ ideogramTrack = (cytobandValues, options = {}) => ({
 
     data: {
         values: cytobandValues,
+        format: { type: "tsv" }
     },
 
     transform: [
