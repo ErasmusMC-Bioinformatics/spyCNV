@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 import csv
 import io
+import json
 from importlib.resources import files
+from pathlib import Path
 
 from jinja2 import Environment, PackageLoader
 
+from spyCNV.io.loaders import load_resource
+
 _APP = "spyCNV"
 _PKG = files(_APP)
-
-
-def read_file(file: str):
-    with open(file, "r") as f:
-        return f.read()
 
 
 def write_file(file: str, content: str):
@@ -19,15 +18,11 @@ def write_file(file: str, content: str):
         f.write(content)
 
 
-def _load_resource(path_parts: list[str]) -> str:
+def _load_json(path_parts: list[str]):
+    # TODO: Replace the load json with io loaders
     content = (_PKG.joinpath(*path_parts)).read_text()
-    return content
-
-
-def _load_tsv(path_parts: list[str]) -> list[dict]:
-    content = (_PKG.joinpath(*path_parts)).read_text()
-    tsv = list(csv.DictReader(io.StringIO(content), delimiter="\t"))
-    return tsv
+    json_content = json.loads(content)
+    return json.dumps(json_content)
 
 
 def render_html(sample_id: str, genome: str = "hg19") -> str:
@@ -35,17 +30,21 @@ def render_html(sample_id: str, genome: str = "hg19") -> str:
     env = Environment(loader=PackageLoader(_APP, "templates"))
     template = env.get_template("base.html.jinja2")
 
-    genomespy_js = _load_resource(["static", "genome-spy_core@0.70.0.js"])
+    genomespy_js = load_resource(Path("static", "genome-spy_core@0.70.0.js"))
     plots = {
-        "ideogram": _load_resource(["plots", "ideogramTrack.js"]),
-        "baf": _load_resource(["plots", "bAlleleFrequencyTrack.js"]),
-        "geneAnnotation": _load_resource(["plots", "geneAnnotationTrack.js"]),
+        "ideogram": load_resource(Path("plots", "ideogramTrack.js")),
+        "logratio": load_resource(Path("plots", "logratioTrack.js")),
+        "baf": load_resource(Path("plots", "bAlleleFrequencyTrack.js")),
+        "geneAnnotation": load_resource(Path("plots", "geneAnnotationTrack.js")),
     }
 
     data = {
-        "cytoband": _load_tsv(["data", f"cytoBand.{genome}.tsv"]),
-        "refseq": _load_tsv(["data", f"refSeq_genes_scored_compressed.{genome}.tsv"]),
-        "baf": _load_test_json(),
+        "cytoband": load_resource(Path("data", f"cytoBand.{genome}.tsv")),
+        "refseq": load_resource(
+            Path("data", f"refSeq_genes_scored_compressed.{genome}.tsv")
+        ),
+        "baf": _load_json(["data", "cnv_ballele.json"]),
+        "logratio": _load_json(["data", "tn_logratio.json"]),
     }
 
     html = template.render(
