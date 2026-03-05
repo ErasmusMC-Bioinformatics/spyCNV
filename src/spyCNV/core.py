@@ -7,7 +7,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader
 
-from spyCNV.io.loaders import load_resource
+from spyCNV.io.loaders import CNVData, load_resource
 
 _APP = "spyCNV"
 _PKG = files(_APP)
@@ -25,7 +25,7 @@ def _load_json(path_parts: list[str]):
     return json.dumps(json_content)
 
 
-def render_html(sample_id: str, genome: str = "hg19") -> str:
+def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
     """Render html with embedded javascript."""
     env = Environment(loader=PackageLoader(_APP, "templates"))
     template = env.get_template("base.html.jinja2")
@@ -43,8 +43,8 @@ def render_html(sample_id: str, genome: str = "hg19") -> str:
         "refseq": load_resource(
             Path("data", f"refSeq_genes_scored_compressed.{genome}.tsv")
         ),
-        "baf": _load_json(["data", "cnv_ballele.json"]),
-        "logratio": _load_json(["data", "tn_logratio.json"]),
+        "baf": [r.model_dump() for r in cnv_data.baf],
+        "logratio": [r.model_dump() for r in cnv_data.logratio],
     }
 
     html = template.render(
