@@ -13,14 +13,6 @@ from pydantic import BaseModel, ConfigDict
 _PKG = files("spyCNV")
 
 
-class BafRecord(BaseModel):
-    chrom: str
-    pos: int
-    vaf: float
-
-    model_config: ClassVar[ConfigDict] = {"populate_by_name": True}
-
-
 class CNVRecord(BaseModel):
     contig: str
     start: int
@@ -31,7 +23,7 @@ class CNVRecord(BaseModel):
 
 
 class CNVData(BaseModel):
-    baf: list[BafRecord]
+    baf: list[CNVRecord]
     logratio: list[CNVRecord]
 
 
@@ -86,13 +78,13 @@ def load_input(
         raise ValueError(f"Unsupported type: {type}")
 
 
-def parse_vcf(rows: list[dict[str, str]]) -> list[BafRecord]:
+def parse_vcf(rows: list[dict[str, str]]) -> list[CNVRecord]:
     """
     Parse TSO500 BAF from hard-filtered VCF rows.
     Only PASS variants are included. Extracts VF or AF from FORMAT/SAMPLE.
     POS is used as name since ID is always '.'.
     """
-    records: list[BafRecord] = []
+    records: list[CNVRecord] = []
 
     if not rows:
         return records
@@ -114,159 +106,89 @@ def parse_vcf(rows: list[dict[str, str]]) -> list[BafRecord]:
             continue
 
         records.append(
-            BafRecord(
-                chrom=row["CHROM"].replace("chr", ""),
-                pos=pos,
-                vaf=allele_freq,
-            )
-        )
-
-    return records
-
-
-def parse_hrd_baf(filepath: Path | str) -> list[BafRecord]:
-    """
-    Parse HRD BAF from headerless bAllele.tsv.
-    Columns: chrom, start, rs, freq
-    """
-    rows = _parse_headerless_tsv(filepath, _BAllele_FIELDS)
-    records = []
-
-    for row in rows:
-        rs = row.get("rs", "")
-        freq_str = row.get("freq", "")
-
-        if not rs or not freq_str:
-            continue
-
-        try:
-            freq = float(freq_str)
-        except ValueError:
-            continue
-
-        records.append(
             CNVRecord(
-                contig=row["chrom"].replace("chr", ""),
-                start=int(row["start"]),
-                name=rs,
-                value=freq,
+                **{
+                    "contig": row["CHROM"].replace("chr", ""),
+                    "start": pos,
+                    "name": f"pos_{pos}",
+                    "value": allele_freq,
+                }
             )
         )
 
     return records
 
 
-def _parse_headerless_tsv(
-    filepath: Path | str, fieldnames: list[str]
-) -> list[dict[str, str]]:
-    """Load a headerless TSV file with explicit field names."""
-    with _open_file(filepath) as f:
-        content = f.read()
-    reader = csv.DictReader(io.StringIO(content), fieldnames=fieldnames, delimiter="\t")
-    return list(reader)
-
-
-_BAllele_FIELDS = ["chrom", "start", "rs", "freq"]
-_LOGRATIO_FIELDS = ["chrom", "start", "end", "rs", "log2"]
-
-
-def parse_hrd_logratio(filepath: Path | str) -> list[CNVRecord]:
-    """
-    Parse HRD logRatio from headerless logRatio.tsv.
-    Columns: chrom, start, end, rs, log2
-    """
-    rows = _parse_headerless_tsv(filepath, _LOGRATIO_FIELDS)
-    records = []
-
+def parse_generic_tsv(rows: list[dict[str, str]]) -> list[CNVRecord]:
+    """Parse headerless bAllele and logRatio files."""
+    records: list[CNVRecord] = []
     for row in rows:
-        rs = row.get("rs", "")
-        log2_str = row.get("log2", "")
-
-        if not rs or not log2_str:
-            continue
-
         try:
-            log2 = float(log2_str)
-        except ValueError:
-            continue
-
-        records.append(
-            CNVRecord(
-                contig=row["chrom"].replace("chr", ""),
-                start=int(row["start"]),
-                name=rs,
-                value=log2,
+            records.append(
+                CNVRecord(
+                    **{
+                        "contig": row["chrom"].replace("chr", ""),
+                        "start": int(row["pos"]),
+                        "name": row["name"],
+                        "value": float(row["value"]),
+                    }
+                )
             )
-        )
-
+        except (ValueError, TypeError, KeyError):
+            continue
     return records
 
 
-def parse_logratio(rows: list[dict[str, str]]) -> list[CNVRecord]:
-    """
-    Parse TSO500 logRatio from tn.tsv.gz rows.
-    Expected columns: contig, start, stop, name, <sample_col>, <last_col>
-    The normalized count is the second-to-last column (fieldnames[-2]).
-    Skips header lines starting with '#sex' (handled by load_input).
-    """
-    records = []
+def parse_tn(rows: list[dict[str, str]], sample_id: str) -> list[CNVRecord]:
+    """Parse TN TSV (logratio) file with header."""
+    records: list[CNVRecord] = []
 
     if not rows:
         return records
 
-    # The sample column is the second-to-last field, matching create_cnr_from_tn logic
-    fieldnames = list(rows[0].keys())
-    sample_column = fieldnames[-2]
-
     for row in rows:
-        contig = row["contig"]
-        chrom = contig.replace("chr", "")
-
-        gene = row["name"]
-        # Strip the contig suffix from gene name (e.g. "GENE-chr1" -> "GENE")
-        gene_cut = gene.find(f"-{contig}")
-        if gene_cut >= 0:
-            gene = gene[:gene_cut]
-
-        norm_count_str = row.get(sample_column, "")
         try:
-            norm_count = float(norm_count_str)
-        except ValueError:
-            continue
-
-        records.append(
-            CNVRecord(
-                contig=chrom,
-                start=int(row["start"]),
-                name=gene,
-                value=norm_count,
+            records.append(
+                CNVRecord(
+                    **{
+                        "contig": row["contig"].replace("chr", ""),
+                        "start": int(row["start"]),
+                        "name": row["name"],
+                        "value": float(row[sample_id]),
+                    }
+                )
             )
-        )
+        except (ValueError, TypeError, KeyError):
+            continue
 
     return records
 
 
 def create_cnv_data(
-    tn_file: Path | str,
-    filtered_vcf: Path | str,
-    logratio_file: Path | str,
-    ballele_file: Path | str,
+    sample_id: str,
+    tn_file: str | None = None,
+    filtered_vcf: str | None = None,
+    logratio_file: str | None = None,
+    ballele_file: str | None = None,
 ) -> CNVData:
-    """
-    Create a CNVData object from TSO500 and HRD input files.
-    BAF and logRatio records from both sources are combined and sorted
-    by contig and start position.
-    """
-    tso_baf = parse_vcf(load_input(filtered_vcf, "vcf"))
-    hrd_baf = parse_hrd_baf(ballele_file)
+    baf_records = []
+    logratio_records = []
 
-    tso_logratio = parse_logratio(load_input(tn_file, "tsv"))
-    hrd_logratio = parse_hrd_logratio(logratio_file)
+    if ballele_file and logratio_file:
+        baf_rows = load_input(
+            ballele_file, type="tsv", header=["chrom", "pos", "name", "value"]
+        )
+        baf_records = parse_generic_tsv(baf_rows)
 
-    def sort_key(r: CNVRecord) -> tuple[int | str, int]:
-        return (int(r.contig) if r.contig.isnumeric() else ord(r.contig[0]), r.start)
+        lr_rows = load_input(
+            logratio_file, type="tsv", header=["chrom", "pos", "name", "value"]
+        )
+        logratio_records = parse_generic_tsv(lr_rows)
+    elif filtered_vcf and tn_file:
+        vcf_rows = load_input(filtered_vcf, type="vcf")
+        baf_records = parse_vcf(vcf_rows)
 
-    baf = sorted(tso_baf + hrd_baf, key=sort_key)
-    logratio = sorted(tso_logratio + hrd_logratio, key=sort_key)
+        tn_rows = load_input(tn_file, type="tsv")
+        logratio_records = parse_tn(tn_rows, sample_id)
 
-    return CNVData(baf=baf, logratio=logratio)
+    return CNVData(baf=baf_records, logratio=logratio_records)  # type: ignore
