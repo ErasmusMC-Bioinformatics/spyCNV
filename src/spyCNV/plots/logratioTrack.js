@@ -3,6 +3,9 @@ const logratioTrack = (data, options = {}) => ({
     data: {
         values: data, format: { type: "json" },
     },
+    transform: [
+        { type: "formula", expr: "datum.value > 5 || datum.value < -5 ? 'outlier' : 'normal'", as: "outlierStatus" }
+    ],
     mark: {
         type: "point",
         // size: {expr: "min(1 * pow(zoomLevel, 1), 70)"},
@@ -15,6 +18,9 @@ const logratioTrack = (data, options = {}) => ({
             chrom: "contig",
             pos: "start",
             type: "locus",
+            scale: {
+                name: "genomeScale",
+            },
             axis: {
                 chromTickColor: "#8B9DC3",
                 chromLabelColor: "#7A8A99",
@@ -36,7 +42,7 @@ const logratioTrack = (data, options = {}) => ({
             field: "value",
             type: "quantitative",
             scale: {
-                // domain: [-3, 3],
+                domain: [-5, 5],
                 clamp: true
             },
             axis: {
@@ -44,8 +50,24 @@ const logratioTrack = (data, options = {}) => ({
                 title: "Logratio"
             }
         },
-        color: { value: "#8589ff" },
-        stroke: { value: "#3c45e8" },
+        color: {
+            field: "outlierStatus",
+            type: "nominal",
+            scale: {
+                domain: ["normal", "outlier"],
+                range: ["#8589ff", "red"]
+            },
+            legend: null
+        },
+        stroke: {
+            field: "outlierStatus",
+            type: "nominal",
+            scale: {
+                domain: ["normal", "outlier"],
+                range: ["#3c45e8", "darkred"]
+            },
+            legend: null
+        },
         tooltip: [
             { field: "contig", type: "nominal", title: "Chromosome" },
             { field: "start", type: "quantitative", title: "Position" },
