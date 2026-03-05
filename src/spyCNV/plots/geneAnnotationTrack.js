@@ -64,6 +64,11 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         {
             type: "filter",
             expr: "datum._lane < 3"
+        },
+        {
+            type: "formula",
+            expr: "datum.score >= 10000 ? 'priority' : 'normal'",
+            as: "priorityStatus"
         }
     ],
 
@@ -97,7 +102,15 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
             },
 
             encoding: {
-                color: { value: "#909090" }
+                color: {
+                    field: "priorityStatus",
+                    type: "nominal",
+                    scale: {
+                        domain: ["normal", "priority"],
+                        range: ["#909090", "red"]
+                    },
+                    legend: null
+                }
             },
 
             layer: [
@@ -106,7 +119,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
 
                     transform: [
                         // Save memory by getting rid of extra field – Only retain the required ones
-                        { type: "project", fields: ["_lane", "_start", "exons"] },
+                        { type: "project", fields: ["_lane", "_start", "exons", "priorityStatus"] },
                         // The data file uses delta encoding for alternating exon/intron lengths to compress it.
                         // This transform decompresses it and generates a new data item for each exon.
                         { type: "flattenCompressedExons", start: "_start" }
@@ -185,7 +198,16 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             field: "_centroid",
                             type: "locus"
                         },
-                        text: { field: "symbol", type: "nominal" }
+                        text: { field: "symbol", type: "nominal" },
+                        color: {
+                            field: "priorityStatus",
+                            type: "nominal",
+                            scale: {
+                                domain: ["normal", "priority"],
+                                range: ["black", "red"]
+                            },
+                            legend: null
+                        }
                     }
                 },
                 {
@@ -211,7 +233,15 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             type: "quantitative",
                             scale: null
                         },
-                        color: { value: "black" },
+                        color: {
+                            field: "priorityStatus",
+                            type: "nominal",
+                            scale: {
+                                domain: ["normal", "priority"],
+                                range: ["black", "red"]
+                            },
+                            legend: null
+                        },
                         shape: {
                             field: "strand",
                             type: "nominal",
