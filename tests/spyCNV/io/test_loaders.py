@@ -2,13 +2,14 @@
 from pathlib import Path
 
 from spyCNV.io.loaders import (
-    BafRecord,
     CNVRecord,
     _open_file,
     load_input,
     load_resource,
-    parse_hrd_baf,
+    parse_generic_tsv,
+    parse_tn,
     parse_vcf,
+    create_cnv_data,
 )
 
 BAF_TSV = Path("tests/data/MXX-ABCDT_bAllele.tsv")
@@ -105,16 +106,33 @@ class TestParseInput:
         ]
         records = parse_vcf(expect)
         assert isinstance(records, list)
-        assert all(isinstance(r, BafRecord) for r in records)
-        assert records == [BafRecord(chrom="3", pos=39946102, vaf=1.0000)]
+        assert all(isinstance(r, CNVRecord) for r in records)
+        assert records == [
+            CNVRecord(contig="3", start=39946102, name="pos_39946102", value=1.0)
+        ]
 
-    # def test_parse_hrd_baf(self):
-    #     records = parse_hrd_baf(BAF_TSV)
-    #     assert len(records) == 19368
+    def test_parse_generic_tsv(self):
+        rows = [
+            {"chrom": "chr1", "pos": "100", "name": "rs1", "value": "0.5"},
+            {"chrom": "2", "pos": "200", "name": "rs2", "value": "1.5"},
+            {"chrom": "chr3", "pos": "invalid", "name": "rs3", "value": "2.5"} # Should be skipped
+        ]
+        records = parse_generic_tsv(rows)
+        assert len(records) == 2
+        assert records[0] == CNVRecord(contig="1", start=100, name="rs1", value=0.5)
+        assert records[1] == CNVRecord(contig="2", start=200, name="rs2", value=1.5)
 
-    # def test_parse_hrd_logratio(self):
-    #     records = parse_hrd_baf(BAF_TSV)
-    #     assert len(records) == 19368
+    def test_parse_tn(self):
+        rows = [
+            {"contig": "chr1", "start": "100", "stop": "200", "name": "geneA", "SAMPLE-1": "0.1", "improper_pairs": "0"},
+            {"contig": "2", "start": "300", "stop": "400", "name": "geneB", "SAMPLE-1": "0.2", "improper_pairs": "0"},
+            {"contig": "chr3", "start": "500", "stop": "600", "name": "geneC"} # Missing SAMPLE-1, should logically be skipped
+        ]
+        records = parse_tn(rows, "SAMPLE-1")
+        assert len(records) == 2
+        assert records[0] == CNVRecord(contig="1", start=100, name="geneA", value=0.1)
+        assert records[1] == CNVRecord(contig="2", start=300, name="geneB", value=0.2)
+
 
 
 # def test_correct_keys():

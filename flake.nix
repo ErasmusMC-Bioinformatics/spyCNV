@@ -58,7 +58,7 @@
 
             buildInputs = with pkgs; [
               (writeShellScriptBin "dev" ''
-                fd -tf -e py | entr -c pytest
+                fd -tf | entr -c pytest
               '')
             ];
             shellHook = ''
@@ -90,6 +90,7 @@
               pip
 
               jinja2
+              pydantic
               pytest
               typer
 
