@@ -4,7 +4,6 @@ import csv
 import gzip
 import io
 import json
-import math
 from importlib.resources import files
 from pathlib import Path
 from typing import ClassVar, Literal
