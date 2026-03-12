@@ -27,4 +27,4 @@ def test_load_tsv():
         ),
     }
     assert len(data["cytoband"]) == 30794
-    assert len(data["refseq"]) == 2896164
+    assert len(data["refseq"]) == 2896192
