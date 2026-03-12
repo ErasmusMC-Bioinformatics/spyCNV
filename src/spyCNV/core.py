@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import csv
-import io
 import json
 from importlib.resources import files
 from pathlib import Path
