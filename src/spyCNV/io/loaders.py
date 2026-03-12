@@ -3,7 +3,6 @@ import csv
 import gzip
 import io
 import json
-import math
 from importlib.resources import files
 from pathlib import Path
 from typing import ClassVar, Literal
@@ -181,7 +180,7 @@ def create_cnv_data(
         baf_records = parse_generic_tsv(baf_rows)
 
         lr_rows = load_input(
-            logratio_file, type="tsv", header=["chrom", "pos", "name", "value"]
+            logratio_file, type="tsv", header=["chrom", "pos", "end", "name", "value"]
         )
         logratio_records = parse_generic_tsv(lr_rows)
     elif filtered_vcf and tn_file:
