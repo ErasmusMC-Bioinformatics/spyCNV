@@ -9,7 +9,7 @@ from spyCNV.io.loaders import create_cnv_data
 
 app = typer.Typer(name="spyCNV", help="", add_completion=False)
 
-
+typ
 @app.command()
 def generate(
     sample_id: str = typer.Option(..., "--sample-id", "-s", help="Sample ID"),
