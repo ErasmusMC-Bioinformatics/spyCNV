@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -9,14 +10,26 @@ from spyCNV.io.loaders import create_cnv_data
 
 app = typer.Typer(name="spyCNV", help="", add_completion=False)
 
-typ
+
 @app.command()
 def generate(
-    sample_id: str = typer.Option(..., "--sample-id", "-s", help="Sample ID"),
-    vcf: str = typer.Option(None, "--vcf", "-v", help="Path to TSO500 hard-filtered VCF"),
-    tn: str = typer.Option(None, "--tn", "-t", help="Path to TSO500 tn.tsv.gz (LogRatio)"),
-    ballele: str = typer.Option(None, "--ballele", "-b", help="Path to HRD bAllele.tsv (BAF)"),
-    logratio: str = typer.Option(None, "--logratio", "-l", help="Path to HRD logRatio.tsv"),
+    sample_id: Annotated[str, typer.Option("--sample-id", "-s", help="Sample ID")],
+    vcf: Annotated[
+        str | None,
+        typer.Option(None, "--vcf", "-v", help="Path to TSO500 hard-filtered VCF"),
+    ],
+    tn: Annotated[
+        str | None,
+        typer.Option("--tn", "-t", help="Path to TSO500 tn.tsv.gz (LogRatio)"),
+    ],
+    ballele: Annotated[
+        str | None,
+        typer.Option("--ballele", "-b", help="Path to HRD bAllele.tsv (BAF)"),
+    ],
+    logratio: Annotated[
+        str | None,
+        typer.Option("--logratio", "-l", help="Path to HRD logRatio.tsv"),
+    ],
 ):
     typer.echo("Generating HTML report...")
     cnv_data = create_cnv_data(
