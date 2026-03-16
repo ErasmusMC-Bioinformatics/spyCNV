@@ -61,12 +61,6 @@
                 fd -tf | entr -c pytest
               '')
             ];
-            shellHook = ''
-              echo "========================================="
-              echo "| Available commands:                   |"
-              echo "|   dev - run pytest on src file change |"
-              echo "========================================="
-            '';
 
             postShellHook = ''
               venvVersionWarn() {
@@ -83,6 +77,11 @@
 
               venvVersionWarn
               pip install -e . --quiet
+
+              echo "========================================="
+              echo "| Available commands:                   |"
+              echo "|   dev - run pytest on src file change |"
+              echo "========================================="
             '';
 
             packages = with python.pkgs; [
