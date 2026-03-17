@@ -1,0 +1,291 @@
+##fileformat=VCFv4.2
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths (counting only informative reads out of the total reads) for the ref and alt alleles in the order listed">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele fractions for alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=F1R2,Number=R,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting each allele">
+##FORMAT=<ID=F2R1,Number=R,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting each allele">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MB,Number=4,Type=Integer,Description="Per-sample component statistics to detect mate bias">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias">
+##FORMAT=<ID=SQ,Number=A,Type=Float,Description="Somatic quality">
+##DRAGENCommandLine=<ID=HashTableBuild,Version="SW: 01.003.044.3.10.9, HashTableVersion: 8",CommandLineOptions="/opt/edico/bin/dragen --build-hash-table true --output-directory /staging/illumina/DRAGEN_TSO500/ref_hashtable --ht-reference /staging/illumina/DRAGEN_TSO500/ref_hashtable/genome.fa --ht-num-threads 64 --ht-build-rna-hashtable true --enable-cnv true">
+##DRAGENCommandLine=<ID=dragen,Version="SW: 07.021.624.3.10.16, HW: 07.021.624",Date="Sat Nov 01 08:06:49 UTC 2025",CommandLineOptions="--ref-dir hashtable --output-directory DnaDragenCaller --output-file-prefix MXX-ABCDT --events-log-file events.csv --tso500-solid-umi true --umi-metrics-interval-file resource_bundle/small_variants/TST500C_manifest.bed --tso500-solid-snv true --vc-sq-call-threshold=-1 --vc-target-bed resource_bundle/small_variants/TST500C_manifest.bed --vc-target-bed-padding 8 --vc-systematic-noise resource_bundle/small_variants/mean_gvcf_bq30_lowSQ_v1.0_systematic_noise.bed.gz --vc-depth-annotation-threshold 100 --vc-homref-depth-filter-threshold 100 --tumor-fastq-list MXX-ABCDT.fastq_list.csv --tumor-fastq-list-sample-id MXX-ABCDT --vc-somatic-hotspots resource_bundle/small_variants/pepe2_prior.vcf --vc-blacklist-bed resource_bundle/small_variants/pepe_blacklist_sorted.bed --qc-coverage-ignore-overlaps true --gc-metrics-enable true --qc-coverage-region-1 resource_bundle/small_variants/TST500C_CodingRegions_hg19.bed --qc-coverage-reports-1 callability --qc-coverage-tag-1 tmb --qc-coverage-region-2 resource_bundle/small_variants/TST500C_manifest.exon.bed --qc-coverage-tag-2 exon --tso500-contam-vcf resource_bundle/contamination/Contamination.vcf --qc-contam-min-basequal 30 --qc-contam-min-mapq 30 --tso500-solid-cnv true --cnv-combined-counts resource_bundle/cnv/TSO500_DRAGEN_BASELINE_SOLID_matched_targets.combined.counts.txt.gz --cnv-segmentation-bed resource_bundle/cnv/dragen_tso500_manifest_cnv_genes_predefined_cutoff_FFPE.bed --cnv-target-bed resource_bundle/cnv/TSO500_DRAGEN_TARGET_SOLID_matched_targets.bed --tso500-solid-msi true --msi-microsatellites-file resource_bundle/msi/references/microsatellites-TSO500-SOLID-concordant.list --msi-ref-normal-dir resource_bundle/msi/data/TSO500-Solid --tso500-use-combined-license true --tso500-cnv-enable-low-validation-filter false --logging-to-output-dir true --force">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (informative and non-informative); some reads may have been filtered based on mapq etc.">
+##INFO=<ID=END,Number=1,Type=Integer,Description="Stop position of the interval">
+##INFO=<ID=FractionInformativeReads,Number=1,Type=Float,Description="The fraction of informative reads out of the total reads">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
+##INFO=<ID=AQ,Number=A,Type=Float,Description="Systematic noise score">
+##INFO=<ID=hotspot,Number=0,Type=Flag,Description="Known somatic site, used to increase confidence in call">
+##INFO=<ID=MNVTAG,Number=1,Type=String,Description="Denotes the MNV call to which the variant belongs. Format is 'CHROM:POS_REF->ALT'.">
+##INFO=<ID=GermlineStatus,Number=1,Type=String,Description="Germline status. Possible values: Germline_DB, Germline_Proxi, Somatic, Somatic_Putative_CH">
+##FILTER=<ID=base_quality,Description="Site filtered because median base quality of alt reads at this locus does not meet threshold">
+##FILTER=<ID=filtered_reads,Description="Site filtered because too large a fraction of reads have been filtered out">
+##FILTER=<ID=fragment_length,Description="Site filtered because absolute difference between the median fragment length of alt reads and median fragment length of ref reads at this locus exceeds threshold">
+##FILTER=<ID=low_depth,Description="Site filtered because the read depth is too low">
+##FILTER=<ID=low_frac_info_reads,Description="Site filtered because the fraction of informative reads is below threshold">
+##FILTER=<ID=low_normal_depth,Description="Site filtered because the normal sample read depth is too low">
+##FILTER=<ID=long_indel,Description="Site filtered because the indel length is too long">
+##FILTER=<ID=mapping_quality,Description="Site filtered because median mapping quality of alt reads at this locus does not meet threshold">
+##FILTER=<ID=multiallelic,Description="Site filtered because more than two alt alleles pass tumor LOD">
+##FILTER=<ID=non_homref_normal,Description="Site filtered because the normal sample genotype is not homozygous reference">
+##FILTER=<ID=no_reliable_supporting_read,Description="Site filtered because no reliable supporting somatic read exists">
+##FILTER=<ID=panel_of_normals,Description="Seen in at least one sample in the panel of normals vcf">
+##FILTER=<ID=read_position,Description="Site filtered because median of distances between start/end of read and this locus is below threshold">
+##FILTER=<ID=RMxNRepeatRegion,Description="Site filtered because all or part of the variant allele is a repeat of the reference">
+##FILTER=<ID=str_contraction,Description="Site filtered due to suspected PCR error where the alt allele is one repeat unit less than the reference">
+##FILTER=<ID=too_few_supporting_reads,Description="Site filtered because there are too few supporting reads in the tumor sample">
+##FILTER=<ID=weak_evidence,Description="Somatic variant score does not meet threshold">
+##FILTER=<ID=systematic_noise,Description="Site filtered based on evidence of systematic noise in normals">
+##FILTER=<ID=excluded_regions,Description="Site overlaps with vc excluded regions bed">
+##contig=<ID=chr1,length=249250621>
+##contig=<ID=chr2,length=243199373>
+##contig=<ID=chr3,length=198022430>
+##contig=<ID=chr4,length=191154276>
+##contig=<ID=chr5,length=180915260>
+##contig=<ID=chr6,length=171115067>
+##contig=<ID=chr7,length=159138663>
+##contig=<ID=chr8,length=146364022>
+##contig=<ID=chr9,length=141213431>
+##contig=<ID=chr10,length=135534747>
+##contig=<ID=chr11,length=135006516>
+##contig=<ID=chr12,length=133851895>
+##contig=<ID=chr13,length=115169878>
+##contig=<ID=chr14,length=107349540>
+##contig=<ID=chr15,length=102531392>
+##contig=<ID=chr16,length=90354753>
+##contig=<ID=chr17,length=81195210>
+##contig=<ID=chr18,length=78077248>
+##contig=<ID=chr19,length=59128983>
+##contig=<ID=chr20,length=63025520>
+##contig=<ID=chr21,length=48129895>
+##contig=<ID=chr22,length=51304566>
+##contig=<ID=chrX,length=155270560>
+##contig=<ID=chrY,length=59373566>
+##contig=<ID=chrM,length=16569>
+##contig=<ID=GL000207.1,length=4262>
+##contig=<ID=GL000226.1,length=15008>
+##contig=<ID=GL000229.1,length=19913>
+##contig=<ID=GL000231.1,length=27386>
+##contig=<ID=GL000210.1,length=27682>
+##contig=<ID=GL000239.1,length=33824>
+##contig=<ID=GL000235.1,length=34474>
+##contig=<ID=GL000201.1,length=36148>
+##contig=<ID=GL000247.1,length=36422>
+##contig=<ID=GL000245.1,length=36651>
+##contig=<ID=GL000197.1,length=37175>
+##contig=<ID=GL000203.1,length=37498>
+##contig=<ID=GL000246.1,length=38154>
+##contig=<ID=GL000249.1,length=38502>
+##contig=<ID=GL000196.1,length=38914>
+##contig=<ID=GL000248.1,length=39786>
+##contig=<ID=GL000244.1,length=39929>
+##contig=<ID=GL000238.1,length=39939>
+##contig=<ID=GL000202.1,length=40103>
+##contig=<ID=GL000234.1,length=40531>
+##contig=<ID=GL000232.1,length=40652>
+##contig=<ID=GL000206.1,length=41001>
+##contig=<ID=GL000240.1,length=41933>
+##contig=<ID=GL000236.1,length=41934>
+##contig=<ID=GL000241.1,length=42152>
+##contig=<ID=GL000243.1,length=43341>
+##contig=<ID=GL000242.1,length=43523>
+##contig=<ID=GL000230.1,length=43691>
+##contig=<ID=GL000237.1,length=45867>
+##contig=<ID=GL000233.1,length=45941>
+##contig=<ID=GL000204.1,length=81310>
+##contig=<ID=GL000198.1,length=90085>
+##contig=<ID=GL000208.1,length=92689>
+##contig=<ID=GL000191.1,length=106433>
+##contig=<ID=GL000227.1,length=128374>
+##contig=<ID=GL000228.1,length=129120>
+##contig=<ID=GL000214.1,length=137718>
+##contig=<ID=GL000221.1,length=155397>
+##contig=<ID=GL000209.1,length=159169>
+##contig=<ID=GL000218.1,length=161147>
+##contig=<ID=GL000220.1,length=161802>
+##contig=<ID=GL000213.1,length=164239>
+##contig=<ID=GL000211.1,length=166566>
+##contig=<ID=GL000199.1,length=169874>
+##contig=<ID=GL000217.1,length=172149>
+##contig=<ID=GL000216.1,length=172294>
+##contig=<ID=GL000215.1,length=172545>
+##contig=<ID=GL000205.1,length=174588>
+##contig=<ID=GL000219.1,length=179198>
+##contig=<ID=GL000224.1,length=179693>
+##contig=<ID=GL000223.1,length=180455>
+##contig=<ID=GL000195.1,length=182896>
+##contig=<ID=GL000212.1,length=186858>
+##contig=<ID=GL000222.1,length=186861>
+##contig=<ID=GL000200.1,length=187035>
+##contig=<ID=GL000193.1,length=189789>
+##contig=<ID=GL000194.1,length=191469>
+##contig=<ID=GL000225.1,length=211173>
+##contig=<ID=GL000192.1,length=547496>
+##contig=<ID=NC_007605,length=171823>
+##contig=<ID=hs37d5,length=35477943>
+##reference=file://hashtable/reference.bin
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	MXX-ABCDT
+chr1	19072316	.	A	T	.	low_depth;weak_evidence	DP=1;MQ=124.00;FractionInformativeReads=1.000;AQ=28.36	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.86:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr1	59250766	.	ACGC	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=4;MQ=213.64;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:4,0:0.0000:2,0:2,0:4:2,2,0,0:4,0,0,0
+chr1	78435701	.	T	TA	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr1	118166096	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=183.00;FractionInformativeReads=1.000;AQ=25.41	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.48:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr1	156845133	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=182.00;FractionInformativeReads=1.000;AQ=31.19	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.49:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr1	156845493	.	G	GTGTT	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=3;MQ=250.00;FractionInformativeReads=0.333;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:1,0:0.0000:0,0:1,0:1:0,1,0,0:1,0,0,0
+chr1	158619728	.	A	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr1	158650472	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=29.14	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.02:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr1	193091365	.	A	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=38.24	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:3.80:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr1	204525065	.	T	A	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr1	243716191	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr2	25470480	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=234.00;FractionInformativeReads=1.000;AQ=29.03	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.00:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr2	25470583	.	C	G	.	low_depth;weak_evidence	DP=1;MQ=245.00;FractionInformativeReads=1.000;AQ=29.79	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.15:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr2	25470585	.	A	C	.	low_depth;weak_evidence	DP=1;MQ=245.00;FractionInformativeReads=1.000;AQ=25.92	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.54:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr2	113980859	.	A	C	.	filtered_reads;low_depth;too_few_supporting_reads;weak_evidence	DP=1;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr2	198264860	.	A	G	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=30.66	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.35:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr2	223076423	.	T	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=33.37	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.11:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr2	223080705	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=37.00;FractionInformativeReads=1.000;AQ=28.83	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.97:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr2	223081424	.	A	AAC	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=20;MQ=177.17;FractionInformativeReads=0.150;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:3,0:0.0000:1,0:2,0:3:2,1,0,0:2,1,0,0
+chr2	223081444	.	C	CAG	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=20;MQ=133.21;FractionInformativeReads=0.100;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.01:2,0:0.0000:1,0:1,0:2:2,0,0,0:1,1,0,0
+chr2	223081444	.	C	CACAG	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=20;MQ=133.21;FractionInformativeReads=0.100;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:2,0:0.0000:1,0:1,0:2:2,0,0,0:1,1,0,0
+chr2	223081452	.	G	C	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=18;MQ=133.21;FractionInformativeReads=0.222;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:4,0:0.0000:1,0:3,0:4:2,2,0,0:3,1,0,0
+chr3	12402601	.	A	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr3	12409206	.	A	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=2;MQ=198.27;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:2,0:0.0000:1,0:1,0:2:1,1,0,0:0,2,0,0
+chr3	12409212	.	A	AAT	.	low_depth;too_few_supporting_reads;weak_evidence	DP=2;MQ=198.27;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:2,0:0.0000:1,0:1,0:2:1,1,0,0:0,2,0,0
+chr3	12413791	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr3	41280836	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr3	49724998	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=108.00;FractionInformativeReads=1.000;AQ=32.37	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.81:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr3	49936102	.	T	C	.	PASS	DP=1;MQ=227.00;FractionInformativeReads=1.000;AQ=40.97;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:4.69:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr3	195802067	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=225.00;FractionInformativeReads=1.000;AQ=31.67	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.61:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr4	55143374	.	T	C	.	PASS	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=37.96;GermlineStatus=Somatic	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB:PS	0|1:4.40:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1:55143374
+chr4	55143379	.	T	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=35.69	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB:PS	0|1:3.29:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1:55143374
+chr4	55528397	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=75.00;FractionInformativeReads=1.000;AQ=31.08	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.46:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr4	81208569	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=28.51	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.91:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr4	106160133	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=136.00;FractionInformativeReads=1.000;AQ=28.89	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.98:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr4	106160680	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr4	187538942	.	T	G	.	PASS	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=39.21;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:4.14:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr5	142046356	.	G	T	.	low_depth;weak_evidence	DP=1;MQ=244.00;FractionInformativeReads=1.000;AQ=28.30	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.87:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr5	176517797	.	C	T	.	PASS	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=43.98;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:5.44:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr6	36650565	.	G	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=30.32	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.28:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr6	41978138	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr6	117656904	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=135.00;FractionInformativeReads=1.000;AQ=25.56	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.50:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr6	135528722	.	A	G	.	low_depth;weak_evidence	DP=1;MQ=189.00;FractionInformativeReads=1.000;AQ=33.67	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.50:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr6	161494555	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=1;MQ=238.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr7	14000849	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=202.00;FractionInformativeReads=1.000;AQ=33.01	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.00:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr7	14004710	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=202.00;FractionInformativeReads=1.000;AQ=36.58	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:3.22:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr7	14006229	.	G	T	.	low_depth;weak_evidence	DP=1;MQ=196.00;FractionInformativeReads=1.000;AQ=33.77	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.24:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr7	14009869	.	G	A	.	PASS	DP=2;MQ=55.33;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:30.69:0,2:1.0000:0,2:0,0:2:0,0,2,0:0,0,2,0
+chr7	14016548	.	A	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr7	14017007	.	C	T	.	low_depth;low_frac_info_reads;weak_evidence	DP=3;MQ=100.00;FractionInformativeReads=0.333;AQ=29.51	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.15:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr7	14017008	.	C	G	.	low_depth;low_frac_info_reads;weak_evidence	DP=3;MQ=100.00;FractionInformativeReads=0.333;AQ=31.14	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.56:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr7	14027867	.	G	GCA	.	low_depth;low_frac_info_reads;weak_evidence;excluded_regions	DP=6;MQ=176.36;FractionInformativeReads=0.333;AQ=15.76	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.01:1,1:0.5000:1,1:0,0:2:0,1,0,1:0,1,0,1
+chr7	14027884	.	G	C	.	low_depth;low_frac_info_reads;weak_evidence;excluded_regions	DP=5;MQ=124.11;FractionInformativeReads=0.400;AQ=16.95	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.03:1,1:0.5000:1,1:0,0:2:0,1,0,1:0,1,0,1
+chr7	55272496	.	TAC	T	.	low_depth;low_frac_info_reads;weak_evidence	DP=3;MQ=177.00;FractionInformativeReads=0.333;AQ=22.78	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.21:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr7	55272520	.	G	A	.	low_depth;read_position;weak_evidence;excluded_regions	DP=4;MQ=158.27;FractionInformativeReads=0.500;AQ=12.91	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.02:1,1:0.5000:0,0:1,1:2:0,1,1,0:1,0,0,1
+chr7	92316297	.	T	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr7	106508886	.	A	G	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=34.69	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.55:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr7	140488923	.	T	C	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=25.00;FractionInformativeReads=1.000;AQ=17.86	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.09:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr7	140488924	.	G	T	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=25.00;FractionInformativeReads=1.000;AQ=23.17	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.30:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr7	140488930	.	A	AC	.	low_depth;weak_evidence	DP=1;MQ=25.00;FractionInformativeReads=1.000;AQ=25.42	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.37:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr7	140488930	.	A	C	.	low_depth;multiallelic;too_few_supporting_reads;weak_evidence	DP=1;MQ=25.00;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:1:0,0,0,1:0,0,0,1
+chr7	140546933	.	A	G	.	low_depth;weak_evidence	DP=1;MQ=187.00;FractionInformativeReads=1.000;AQ=24.01	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.36:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr7	140546941	.	G	A	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=187.00;FractionInformativeReads=1.000;AQ=21.26	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.20:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr8	41790770	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr8	41791881	.	G	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=26.95	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.67:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr8	90958530	.	T	C	.	low_depth;weak_evidence	DP=1;MQ=179.00;FractionInformativeReads=1.000;AQ=28.63	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.97:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr8	93107704	.	A	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr9	20414310	.	ACTGCTG	A	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=52.00;FractionInformativeReads=1.000;AQ=10.64	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.01:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr9	86586869	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=107.00;FractionInformativeReads=1.000;AQ=35.53	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.85:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr9	87425973	.	G	A	.	PASS	DP=1;MQ=181.00;FractionInformativeReads=1.000;AQ=43.01;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:5.08:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr9	87428619	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=30.92	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.50:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr9	93606276	.	G	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr9	101900199	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr9	139391636	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=216.00;FractionInformativeReads=1.000;AQ=33.57	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.38:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr9	139391658	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=216.00;FractionInformativeReads=1.000;AQ=32.01	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.83:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr9	139410177	.	T	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=32.84	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.95:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr10	32300107	.	T	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr10	63851761	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr10	70412312	.	A	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr10	89718193	.	T	TG	.	low_depth;too_few_supporting_reads;weak_evidence	DP=2;MQ=250.00;FractionInformativeReads=0.500;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:1,0:0.0000:1,0:0,0:1:1,0,0,0:1,0,0,0
+chr10	112343178	.	ATT	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr10	114903738	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=30.56	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.28:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr10	123240963	.	G	T	.	low_depth;weak_evidence	DP=4;MQ=212.46;FractionInformativeReads=1.000;AQ=21.54	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.05:3,1:0.2500:1,0:2,1:4:1,2,1,0:1,2,0,1
+chr10	123241332	.	G	A	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=23.73	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.34:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr10	123241355	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	64572557	.	A	G	.	PASS	DP=1;MQ=250.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.54:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr11	69467547	.	T	TAC	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=210.00;FractionInformativeReads=1.000;AQ=14.88	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.02:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr11	69624322	.	A	C	.	low_depth;low_frac_info_reads;weak_evidence;excluded_regions	DP=3;MQ=250.00;FractionInformativeReads=0.333;AQ=15.57	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.03:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr11	69629199	.	C	G	.	low_depth;weak_evidence	DP=1;MQ=85.00;FractionInformativeReads=1.000;AQ=35.23	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.73:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr11	77116697	.	AAGAC	A	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=4;MQ=243.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	77116719	.	GAC	G	.	filtered_reads;low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=5;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	77116719	.	G	C	.	filtered_reads;low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=5;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	77163792	.	G	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	118371769	.	G	A	.	low_depth;weak_evidence	DP=2;MQ=205.43;FractionInformativeReads=0.500;AQ=33.87	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.26:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr11	125545435	.	C	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr11	128329988	.	C	A	.	low_depth;low_frac_info_reads;weak_evidence;excluded_regions	DP=5;MQ=250.00;FractionInformativeReads=0.200;AQ=14.26	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.03:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr11	128556444	.	T	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=32.01	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.71:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr11	128556446	.	CA	C	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=28.36	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.70:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	4554548	.	G	C	.	PASS	DP=1;MQ=250.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.54:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr12	12017190	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr12	49434074	.	C	A	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=28.57	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.92:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	56484004	.	G	A	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=100.00;FractionInformativeReads=1.000;AQ=21.86	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.22:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	56484006	.	A	T	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=100.00;FractionInformativeReads=1.000;AQ=22.40	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.25:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	56484010	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=100.00;FractionInformativeReads=1.000;AQ=24.72	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.42:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	57487649	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=238.00;FractionInformativeReads=1.000;AQ=26.90	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.66:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr12	57487729	.	T	G	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=37.96	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:3.73:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr12	133253995	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=32.52	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.85:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr13	22266005	.	C	G	.	low_depth;weak_evidence	DP=1;MQ=193.00;FractionInformativeReads=1.000;AQ=28.39	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.89:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr13	22266013	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=193.00;FractionInformativeReads=1.000;AQ=32.29	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.79:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr13	22274316	.	G	C	.	PASS	DP=1;MQ=167.00;FractionInformativeReads=1.000;AQ=41.55;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:4.86:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr13	32907323	.	A	T	.	low_depth;weak_evidence	DP=1;MQ=110.00;FractionInformativeReads=1.000;AQ=33.98	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.31:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr13	73349359	.	G	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr13	102819223	.	T	C	.	low_depth;weak_evidence	DP=1;MQ=246.00;FractionInformativeReads=1.000;AQ=36.38	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:3.14:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr13	113977566	.	A	T	.	PASS	DP=1;MQ=74.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:5.76:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr14	38064738	.	G	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=33.57	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.18:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr14	38066193	.	T	A	.	low_depth;weak_evidence	DP=1;MQ=138.00;FractionInformativeReads=1.000;AQ=28.04	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.77:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr14	95569673	.	C	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB:PS	.|.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0:95569673
+chr14	95569676	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB:PS	.|.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0:95569673
+chr15	42021480	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=72.00;FractionInformativeReads=1.000;AQ=28.60	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.92:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr16	3641064	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=33.28	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.08:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr16	67671691	.	G	T	.	low_depth;weak_evidence	DP=1;MQ=206.00;FractionInformativeReads=1.000;AQ=29.17	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.03:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr16	67671695	.	G	GA	.	low_depth;weak_evidence	DP=1;MQ=206.00;FractionInformativeReads=1.000;AQ=32.44	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.50:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr16	81934329	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=203.00;FractionInformativeReads=1.000;AQ=34.69	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:2.55:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr16	89348103	.	C	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr16	89849409	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=246.00;FractionInformativeReads=1.000;AQ=30.09	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.28:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr17	7572747	.	C	G	.	low_depth;weak_evidence	DP=2;MQ=180.28;FractionInformativeReads=1.000;AQ=27.21	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.35:1,1:0.5000:1,1:0,0:2:0,1,0,1:0,1,0,1
+chr17	7578115	.	T	C	.	PASS	DP=1;MQ=231.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.52:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr17	17119708	.	T	TG	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr17	37618696	.	A	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr17	41607975	.	C	T	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=157.00;FractionInformativeReads=1.000;AQ=12.66	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.03:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr17	41607977	.	C	T	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=157.00;FractionInformativeReads=1.000;AQ=13.32	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.03:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr17	41620034	.	T	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr17	41620619	.	A	C	.	low_depth;weak_evidence	DP=1;MQ=155.00;FractionInformativeReads=1.000;AQ=29.24	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.05:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr17	41620644	.	A	ACTCT	.	low_depth;weak_evidence;excluded_regions	DP=1;MQ=155.00;FractionInformativeReads=1.000;AQ=9.08	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.01:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr17	41620644	.	A	ACACT	.	low_depth;multiallelic;too_few_supporting_reads;weak_evidence;excluded_regions	DP=1;MQ=155.00;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:1:0,0,1,0:0,0,1,0
+chr17	41620666	.	A	T	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=1;MQ=155.00;FractionInformativeReads=1.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:1,0:0.0000:1,0:0,0:1:1,0,0,0:1,0,0,0
+chr17	57986711	.	T	C	.	PASS	DP=1;MQ=171.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.52:0,1:1.0000:0,1:0,0:1:0,0,1,0:0,0,1,0
+chr17	63534250	.	T	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=2;MQ=250.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr19	10291086	.	G	A	.	low_depth;read_position;weak_evidence	DP=2;MQ=217.37;FractionInformativeReads=1.000;AQ=26.46	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.32:1,1:0.5000:0,1:1,0:2:1,0,1,0:0,1,1,0
+chr19	18266779	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=32.84	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.95:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr19	30306956	.	A	G	.	low_depth;weak_evidence	DP=1;MQ=161.00;FractionInformativeReads=1.000;AQ=29.21	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.96:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr19	30312226	.	C	T	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr19	30314088	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr19	41766667	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr19	45861106	.	G	A	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=31.43	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.55:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr20	9538352	.	C	A	.	low_depth;weak_evidence	DP=1;MQ=245.00;FractionInformativeReads=1.000;AQ=28.83	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.00:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr21	42871521	.	T	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=8;MQ=191.39;FractionInformativeReads=0.750;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:6,0:0.0000:2,0:4,0:6:3,3,0,0:3,3,0,0
+chr21	42872897	.	G	C	.	PASS	DP=1;MQ=119.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.54:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr21	43606997	.	T	C	.	PASS	DP=1;MQ=92.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:9.88:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr22	29095881	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=29.10	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.02:0,1:1.0000:0,1:0,0:1:0,0,0,1:0,0,0,1
+chr22	29100298	.	T	TA	.	base_quality;low_depth;weak_evidence	DP=1;MQ=128.00;FractionInformativeReads=1.000;AQ=25.54	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.37:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chr22	29686512	.	A	T	.	low_depth;weak_evidence	DP=1;MQ=249.00;FractionInformativeReads=1.000;AQ=32.76	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.92:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
+chr22	29695653	.	T	G	.	filtered_reads;low_depth;too_few_supporting_reads;weak_evidence	DP=2;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chr22	41574160	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	39933227	.	T	A	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	39933232	.	T	C	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	48892694	.	A	G	.	PASS	DP=1;MQ=234.00;FractionInformativeReads=1.000;GermlineStatus=Germline_DB	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:6.54:0,1:1.0000:0,0:0,1:1:0,0,0,1:0,0,1,0
+chrX	48894008	.	ATT	A	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	48894011	.	C	A	.	low_depth;too_few_supporting_reads;weak_evidence;excluded_regions	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	48894961	.	C	G	.	low_depth;too_few_supporting_reads;weak_evidence	DP=0;MQ=0.00;FractionInformativeReads=0.000;AQ=-0.00	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	./.:0.00:0,0:0.0000:0,0:0,0:0:0,0,0,0:0,0,0,0
+chrX	63412280	.	C	T	.	low_depth;weak_evidence	DP=1;MQ=250.00;FractionInformativeReads=1.000;AQ=31.08	GT:SQ:AD:AF:F1R2:F2R1:DP:SB:MB	0/1:1.45:0,1:1.0000:0,0:0,1:1:0,0,1,0:0,0,0,1
