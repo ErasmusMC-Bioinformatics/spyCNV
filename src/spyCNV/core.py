@@ -34,15 +34,19 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
         "logratio": load_resource(Path("plots", "logratioTrack.js")),
         "baf": load_resource(Path("plots", "bAlleleFrequencyTrack.js")),
         "geneAnnotation": load_resource(Path("plots", "geneAnnotationTrack.js")),
+        "segment": load_resource(Path("plots", "segmentTrack.js")),
     }
 
-    data = {
+    data: dict[str, str | list[dict] | None] = {
         "cytoband": load_resource(Path("data", f"cytoBand.{genome}.tsv")),
         "refseq": load_resource(
             Path("data", f"refSeq_genes_scored_compressed.{genome}.tsv")
         ),
-        "baf": [r.model_dump() for r in cnv_data.baf],
-        "logratio": [r.model_dump() for r in cnv_data.logratio],
+        "hrd_baf": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.hrd.baf] if cnv_data.hrd else None,
+        "hrd_logratio": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.hrd.logratio] if cnv_data.hrd else None,
+        "tso500_baf": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.tso500.baf] if cnv_data.tso500 else None,
+        "tso500_logratio": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.tso500.logratio] if cnv_data.tso500 else None,
+        "segments": [{"contig": r.contig, "start": r.start, "end": r.end, "name": r.name, "value": r.value} for r in cnv_data.segments] if cnv_data.segments else None,
     }
 
     html = template.render(
