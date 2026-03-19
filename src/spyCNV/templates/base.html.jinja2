@@ -4,13 +4,64 @@
         <meta charset="UTF-8">
         <title>{{ sample_id }}</title>
         <style>
-         body { margin: 0; font-family: sans-serif; }
-         #visualization { width: 100%; height: 100vh; }
+         body { margin: 0; font-family: sans-serif; display: flex; flex-direction: column; }
+         #header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+         h1 { margin: 0; font-size: 1.5rem; }
+         .controls { display: flex; gap: 15px; align-items: center; }
+         .toggle-btn { padding: 8px 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; }
+         .toggle-btn:hover { background: #0056b3; }
+         
+         #content { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 50px); }
+         #visualization-container { flex: 3; overflow-y: auto; position: relative; }
+         #visualization { width: 100%; height: 100%; }
+         
+         #table-container { flex: 1; padding: 15px; background: #ffffff; border-left: 1px solid #ddd; display: flex; flex-direction: column; overflow: hidden; }
+         #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
+         #filter-select { padding: 5px; flex: 1; }
+         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+         th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+         th { background-color: #f4f4f4; position: sticky; top: 0; }
+         .gridjs-tbody tr { height: auto !important; vertical-align: top; }
+         .gridjs-wrapper { height: auto !important; max-height: 600px; }
+         .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; }
+         .gene-red { color: #cc0000; font-weight: 600; }
+         .gene-green { color: #1a8a3a; font-weight: 600; }
         </style>
+        <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+        <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
     </head>
     <body>
-        <h1>{{ sample_id }}</h1>
-        <div id="visualization"></div>
+        <div id="header">
+            <h1>{{ sample_id }}</h1>
+            <div class="controls">
+                {% if data.hrd_baf and data.tso500_baf %}
+                <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
+                <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)">All</label>
+                <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)">TSO500</label>
+                <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)">HRD</label>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="content">
+            <div id="visualization-container">
+                <div id="visualization"></div>
+            </div>
+            
+            <div id="table-container">
+                <h3>Gene Log2 Data</h3>
+                <div id="table-controls">
+                    <select id="filter-select" onchange="grid.forceRender()">
+                        <option value="All">All</option>
+                        <option value="All Amplification and Loss">All Amplification and Loss</option>
+                        <option value="Gain">Gain (Log2 > 0.5)</option>
+                        <option value="Loss">Loss (Log2 < -0.5)</option>
+                        <option value="Deep Loss">Deep Loss (Log2 < -1.0)</option>
+                    </select>
+                </div>
+                <div id="gene-table-wrapper"></div>
+            </div>
+        </div>
         <script>{{ genomespy_js | safe }}</script>
 
         <script>
@@ -18,23 +69,189 @@
          {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
+         {% if plots.segment %}
+         {{ plots.segment }}
+         {% endif %}
 
-         const cytobandData = {{ data.cytoband | tojson }};
-         const logratioData = {{ data.logratio | tojson }};
-         const bafData = {{ data.baf | tojson }};
-         const refseqGenes = {{ data.refseq | tojson }};
-         const spec = {
-             "genome": { "name": "hg19" },
-             "vconcat": [
-                 ideogramTrack(cytobandData),
-                 logratioTrack(logratioData),
-                 bAlleleFrequencyTrack(bafData),
-                 geneAnnotationTrack(refseqGenes)
-             ]
-         };
+         const cytobandData = `{{ data.cytoband | safe }}`;
+         const refseqGenes = `{{ data.refseq | safe }}`;
+         
+         const hrd_baf = {{ data.hrd_baf | tojson | default('null', true) }};
+         const hrd_logratio = {{ data.hrd_logratio | tojson | default('null', true) }};
+         const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
+         const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
+         const segments = {{ data.segments | tojson | default('null', true) }};
+         
+         let embedResult = null;
+         let genomeScale = null;
 
-         genomeSpyEmbed.embed(document.getElementById("visualization"), spec);
+         function getSpec() {
+             return {
+                 "genome": { "name": "hg19" },
+                 "vconcat": [
+                     ideogramTrack(cytobandData),
+                     logratioTrack(hrd_logratio, tso500_logratio, segments),
+                     geneAnnotationTrack(refseqGenes),
+                     bAlleleFrequencyTrack(hrd_baf, tso500_baf)
+                 ]
+             };
+         }
+
+         function updateDisplayMode(value) {
+             if (!embedResult) return;
+             const showHrd    = (value === 'both' || value === 'hrd');
+             const showTso500 = (value === 'both' || value === 'tso500');
+             embedResult.updateNamedData("hrd_logratio",    showHrd    ? hrd_logratio    : []);
+             embedResult.updateNamedData("tso500_logratio", showTso500 ? tso500_logratio : []);
+             embedResult.updateNamedData("hrd_baf",    showHrd    ? hrd_baf    : []);
+             embedResult.updateNamedData("tso500_baf", showTso500 ? tso500_baf : []);
+         }
+
+         function renderPlot() {
+             const container = document.getElementById("visualization");
+             container.innerHTML = "";
+             const namedDataProvider = (name) => {
+                 if (name === "hrd_logratio")    return hrd_logratio    ?? [];
+                 if (name === "tso500_logratio") return tso500_logratio ?? [];
+                 if (name === "hrd_baf")          return hrd_baf         ?? [];
+                 if (name === "tso500_baf")      return tso500_baf     ?? [];
+             };
+             genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
+                embedResult = res;
+                genomeScale = res.getScaleResolutionByName("genomeScale");
+             });
+         }
+
+         renderPlot();
+         
+         // --- Table Logic ---
+         let tableData = [];
+         let grid = null;
+         
+         function generateTableData() {
+             if (!segments || !refseqGenes) return;
+             
+             const lines = refseqGenes.trim().split('\n');
+             const genes = lines.map(line => {
+                const cols = line.split('\t');
+                return {
+                    symbol: cols[0],
+                    chrom: cols[1] ? cols[1].replace('chr', '') : '',
+                    start: parseInt(cols[2]),
+                    end: parseInt(cols[2]) + parseInt(cols[3]),
+                    score: parseInt(cols[5]) || 0
+                };
+             });
+             
+             tableData = [];
+             
+             segments.forEach(seg => {
+                 const segChr = seg.contig;
+                 const segStart = seg.start;
+                 const segEnd = seg.end;
+                 const segLog2 = seg.value;
+                 
+                 genes.forEach(g => {
+                     if (g.chrom === segChr && Math.max(g.start, segStart) <= Math.min(g.end, segEnd)) {
+                         tableData.push({
+                             chr: segChr,
+                             start: g.start,
+                             end: g.end,
+                             gene: g.symbol,
+                             log2: segLog2,
+                             score: g.score
+                         });
+                     }
+                 });
+             });
+             
+             const uniqueGenes = {};
+             tableData.forEach(item => {
+                 if (!uniqueGenes[item.gene] || Math.abs(item.log2) > Math.abs(uniqueGenes[item.gene].log2)) {
+                     uniqueGenes[item.gene] = item;
+                 }
+             });
+             
+             const prio1 = ['BRCA1', 'BRCA2', 'CDKN2A', 'PTEN', 'RB1', 'STK11', 'TP53'];
+             const prio2 = ['APC', 'ATM', 'BAP1', 'CDH1', 'MLH1', 'MSH2', 'MSH6', 'NF1', 'NF2', 'RAD51C', 'VHL'];
+             const prio3 = ['AR','BRAF','CCND1','CCNE1','CDK4','CDK6','EGFR','ERBB2','ERBB3',
+                            'FGFR1','FGFR3','KRAS','MCL1','MDM2','MET','MITF','MYC','MYCL1',
+                            'MYCN','NKX2-1','PDGFRA','PIK3CA','SOX2','TERT','ZNF703'];
+
+             function getGeneClass(gene) {
+                 if (prio1.includes(gene) || prio2.includes(gene)) return 'gene-red';
+                 if (prio3.includes(gene)) return 'gene-green';
+                 return '';
+             }
+
+             function getPrio(gene) {
+                 if (prio1.includes(gene)) return 1;
+                 if (prio2.includes(gene)) return 2;
+                 if (prio3.includes(gene)) return 3;
+                 return 4;
+             }
+             
+             tableData = Object.values(uniqueGenes);
+             tableData.sort((a, b) => {
+                 const pA = getPrio(a.gene);
+                 const pB = getPrio(b.gene);
+                 if (pA !== pB) return pA - pB;
+                 return Math.abs(b.log2) - Math.abs(a.log2);
+             });
+             
+             grid = new gridjs.Grid({
+                 columns: [
+                     'Chr',
+                     {
+                         name: 'Gene',
+                         formatter: (cell) => {
+                             const cls = getGeneClass(cell);
+                             if (cls) {
+                                 return gridjs.html(`<span class="${cls}">${cell}</span>`);
+                             }
+                             return cell;
+                         }
+                     },
+                     'Log2(FC)', 'Start', 'End'
+                 ],
+                 data: () => {
+                     const filter = document.getElementById("filter-select").value;
+                     let dt = tableData;
+                     if (filter === "Gain") {
+                         dt = dt.filter(d => d.log2 > 0.5);
+                     } else if (filter === "Loss") {
+                         dt = dt.filter(d => d.log2 < -0.5 && d.log2 >= -1.0);
+                     } else if (filter === "Deep Loss") {
+                         dt = dt.filter(d => d.log2 < -1.0);
+                     } else if (filter === "All Amplification and Loss") {
+                         dt = dt.filter(d => d.log2 > 0.5 || d.log2 < -0.5);
+                     }
+                     return dt.map(r => [r.chr, r.gene, r.log2.toFixed(3), r.start, r.end]);
+                 },
+                 search: true,
+                 sort: true,
+                 fixedHeader: true,
+                 maxHeight: '600px'
+             }).render(document.getElementById("gene-table-wrapper"));
+
+             grid.on('rowClick', (...args) => {
+                 const row = args[1];
+                 const chr = "chr" + row.cells[0].data;
+                 const start = parseInt(row.cells[3].data);
+                 const end = parseInt(row.cells[4].data);
+                 
+                 if (genomeScale) {
+                     const zoomDomain = [
+                         { chrom: chr, pos: Math.max(0, start - 500000) },
+                         { chrom: chr, pos: end + 500000 }
+                     ];
+                     genomeScale.zoomTo(zoomDomain, true);
+                 }
+             });
+         }
+         
+         setTimeout(generateTableData, 500);
+
         </script>
     </body>
-
 </html>
