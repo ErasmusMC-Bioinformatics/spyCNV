@@ -3,6 +3,7 @@ import csv
 import gzip
 import io
 import json
+import math
 from importlib.resources import files
 from pathlib import Path
 from typing import ClassVar, Literal
@@ -21,9 +22,23 @@ class CNVRecord(BaseModel):
     model_config: ClassVar[ConfigDict] = {"populate_by_name": True}
 
 
-class CNVData(BaseModel):
+class SegmentRecord(BaseModel):
+    contig: str
+    start: int
+    end: int
+    value: float
+    name: str
+
+
+class CNVDict(BaseModel):
     baf: list[CNVRecord]
     logratio: list[CNVRecord]
+
+
+class CNVData(BaseModel):
+    hrd: CNVDict | None = None
+    tso500: CNVDict | None = None
+    segments: list[SegmentRecord]
 
 
 def _open_file(filepath: Path | str) -> io.TextIOWrapper | io.StringIO:
@@ -106,12 +121,10 @@ def parse_vcf(rows: list[dict[str, str]]) -> list[CNVRecord]:
 
         records.append(
             CNVRecord(
-                **{
-                    "contig": row["CHROM"].replace("chr", ""),
-                    "start": pos,
-                    "name": f"pos_{pos}",
-                    "value": allele_freq,
-                }
+                contig=row["CHROM"].replace("chr", ""),
+                start=pos,
+                name=f"pos_{pos}",
+                value=allele_freq,
             )
         )
 
@@ -125,12 +138,10 @@ def parse_generic_tsv(rows: list[dict[str, str]]) -> list[CNVRecord]:
         try:
             records.append(
                 CNVRecord(
-                    **{
-                        "contig": row["chrom"].replace("chr", ""),
-                        "start": int(row["pos"]),
-                        "name": row["name"],
-                        "value": float(row["value"]),
-                    }
+                    contig=row["chrom"].replace("chr", ""),
+                    start=int(row["pos"]),
+                    name=row["name"],
+                    value=float(row["value"]),
                 )
             )
         except (ValueError, TypeError, KeyError):
@@ -149,17 +160,34 @@ def parse_tn(rows: list[dict[str, str]], sample_id: str) -> list[CNVRecord]:
         try:
             records.append(
                 CNVRecord(
-                    **{
-                        "contig": row["contig"].replace("chr", ""),
-                        "start": int(row["start"]),
-                        "name": row["name"],
-                        "value": float(row[sample_id]),
-                    }
+                    contig=row["contig"].replace("chr", ""),
+                    start=int(row["start"]),
+                    name=row["name"],
+                    value=float(row[sample_id]),
                 )
             )
         except (ValueError, TypeError, KeyError):
             continue
 
+    return records
+
+
+def parse_segments(rows: list[dict[str, str]]) -> list[SegmentRecord]:
+    """Parse .seg file"""
+    records: list[SegmentRecord] = []
+    for row in rows:
+        try:
+            records.append(
+                SegmentRecord(
+                    contig=row["Chromosome"].replace("chr", ""),
+                    start=int(row["Start"]),
+                    end=int(row["End"]),
+                    name=row.get("Segment_Name", ""),
+                    value=math.log2(float(row["Segment_Mean"])),
+                )
+            )
+        except (ValueError, TypeError, KeyError):
+            continue
     return records
 
 
@@ -169,9 +197,11 @@ def create_cnv_data(
     filtered_vcf: str | None = None,
     logratio_file: str | None = None,
     ballele_file: str | None = None,
+    segment_file: str | None = None,
 ) -> CNVData:
-    baf_records = []
-    logratio_records = []
+    hrd_dict: CNVDict | None = None
+    tso500_dict: CNVDict | None = None
+    segments: list[SegmentRecord] = []
 
     if ballele_file and logratio_file:
         baf_rows = load_input(
@@ -183,11 +213,18 @@ def create_cnv_data(
             logratio_file, type="tsv", header=["chrom", "pos", "end", "name", "value"]
         )
         logratio_records = parse_generic_tsv(lr_rows)
-    elif filtered_vcf and tn_file:
+        hrd_dict = CNVDict(baf=baf_records, logratio=logratio_records)
+
+    if filtered_vcf and tn_file:
         vcf_rows = load_input(filtered_vcf, type="vcf")
         baf_records = parse_vcf(vcf_rows)
 
         tn_rows = load_input(tn_file, type="tsv")
         logratio_records = parse_tn(tn_rows, sample_id)
+        tso500_dict = CNVDict(baf=baf_records, logratio=logratio_records)
 
-    return CNVData(baf=baf_records, logratio=logratio_records)  # type: ignore
+    if segment_file:
+        seg_rows = load_input(segment_file, type="tsv")
+        segments = parse_segments(seg_rows)
+
+    return CNVData(hrd=hrd_dict, tso500=tso500_dict, segments=segments)
