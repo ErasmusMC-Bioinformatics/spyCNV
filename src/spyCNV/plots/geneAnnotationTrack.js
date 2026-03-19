@@ -67,7 +67,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         },
         {
             type: "formula",
-            expr: "datum.score >= 10000 ? 'priority' : 'normal'",
+            expr: "datum.score >= 20000 ? 'priority' : (datum.score >= 10000 ? 'oncogene' : 'normal')",
             as: "priorityStatus"
         }
     ],
@@ -106,8 +106,8 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                     field: "priorityStatus",
                     type: "nominal",
                     scale: {
-                        domain: ["normal", "priority"],
-                        range: ["#909090", "red"]
+                        domain: ["normal", "oncogene", "priority"],
+                        range: ["#909090", "#22aa44", "red"]
                     },
                     legend: null
                 }
@@ -119,7 +119,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
 
                     transform: [
                         // Save memory by getting rid of extra field – Only retain the required ones
-                        { type: "project", fields: ["_lane", "_start", "exons", "priorityStatus"] },
+                        { type: "project", fields: ["_lane", "_start", "exons", "priorityStatus", "score"] },
                         // The data file uses delta encoding for alternating exon/intron lengths to compress it.
                         // This transform decompresses it and generates a new data item for each exon.
                         { type: "flattenCompressedExons", start: "_start" }
@@ -203,8 +203,8 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             field: "priorityStatus",
                             type: "nominal",
                             scale: {
-                                domain: ["normal", "priority"],
-                                range: ["black", "red"]
+                                domain: ["normal", "oncogene", "priority"],
+                                range: ["black", "#22aa44", "red"]
                             },
                             legend: null
                         }
@@ -237,8 +237,8 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             field: "priorityStatus",
                             type: "nominal",
                             scale: {
-                                domain: ["normal", "priority"],
-                                range: ["black", "red"]
+                                domain: ["normal", "oncogene", "priority"],
+                                range: ["black", "#22aa44", "red"]
                             },
                             legend: null
                         },
