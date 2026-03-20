@@ -177,13 +177,18 @@ def parse_segments(rows: list[dict[str, str]]) -> list[SegmentRecord]:
     records: list[SegmentRecord] = []
     for row in rows:
         try:
+            contig = row["Chromosome"].replace("chr", "")
+            start = int(row["Start"])
+            end = int(row["End"])
+            name = row.get("Segment_Name", "")
+            value = round(math.log2(float(row["Segment_Mean"])), 3)
             records.append(
                 SegmentRecord(
-                    contig=row["Chromosome"].replace("chr", ""),
-                    start=int(row["Start"]),
-                    end=int(row["End"]),
-                    name=row.get("Segment_Name", ""),
-                    value=math.log2(float(row["Segment_Mean"])),
+                    contig=contig,
+                    start=start,
+                    end=end,
+                    name=name,
+                    value=value,
                 )
             )
         except (ValueError, TypeError, KeyError):
@@ -199,6 +204,7 @@ def create_cnv_data(
     ballele_file: str | None = None,
     segment_file: str | None = None,
 ) -> CNVData:
+    """Combine TSO500 and/or HRD and segments datasets into a single CNVData object"""
     hrd_dict: CNVDict | None = None
     tso500_dict: CNVDict | None = None
     segments: list[SegmentRecord] = []
