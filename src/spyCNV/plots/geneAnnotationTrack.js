@@ -107,7 +107,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                     type: "nominal",
                     scale: {
                         domain: ["normal", "oncogene", "priority"],
-                        range: ["#909090", "#22aa44", "red"]
+                        range: ["#606060", "#1a8a35", "#cc0000"]
                     },
                     legend: null
                 }
