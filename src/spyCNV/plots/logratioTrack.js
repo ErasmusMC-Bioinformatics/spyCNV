@@ -15,26 +15,28 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
     };
 
     const yEncoding = {
-        field: "clampedValue",
+        field: "_clampedValue",
         type: "quantitative",
         scale: { domain: [-6.3, 6.3] },
         axis: { grid: true, title: "Log2", tickCount: 5 }
     };
 
+    const clampOutliers = [
+        { type: "formula", expr: "datum.value > 6 ? 6 : (datum.value < -6 ? -6 : datum.value)", as: "_clampedValue" },
+        { type: "formula", expr: "datum.value > 6 || datum.value < -6 ? 'outlier' : 'normal'", as: "_outlierStatus" }
+    ]
+
     if (hrdData) {
         layers.push({
             data: { name: "hrd_logratio" },
-            transform: [
-                { type: "formula", expr: "datum.value > 6 ? 6 : (datum.value < -6 ? -6 : datum.value)", as: "clampedValue" },
-                { type: "formula", expr: "datum.value > 6 || datum.value < -6 ? 'outlier' : 'normal'", as: "outlierStatus" }
-            ],
+            transform: clampOutliers,
             mark: { type: "point", geometricZoomBound: 12, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding,
                 y: yEncoding,
                 size: { value: 120 },
-                color: { field: "outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#8589ff", "red"] }, legend: null },
-                stroke: { field: "outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
+                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#8589ff", "red"] }, legend: null },
+                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
                 tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }]
             }
         });
@@ -43,17 +45,14 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
     if (tso500Data) {
         layers.push({
             data: { name: "tso500_logratio" },
-            transform: [
-                { type: "formula", expr: "datum.value > 6 ? 6 : (datum.value < -6 ? -6 : datum.value)", as: "clampedValue" },
-                { type: "formula", expr: "datum.value > 6 || datum.value < -6 ? 'outlier' : 'normal'", as: "outlierStatus" }
-            ],
+            transform: clampOutliers,
             mark: { type: "point", geometricZoomBound: 12, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding,
                 y: yEncoding,
                 size: { value: 120 },
-                color: { field: "outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#ffb14e", "red"] }, legend: null },
-                stroke: { field: "outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
+                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#ffb14e", "red"] }, legend: null },
+                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
                 tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }]
             }
         });
@@ -63,7 +62,7 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
         layers.push({
             data: { values: segments, format: { type: "json" } },
             transform: [
-                { type: "formula", expr: "datum.value > 5 ? 5 : (datum.value < -5 ? -5 : datum.value)", as: "clampedValue" }
+                { type: "formula", expr: "datum.value > 6 ? 6 : (datum.value < -6 ? -6 : datum.value)", as: "_clampedValue" }
             ],
             mark: { type: "rule", size: 3, tooltip: null },
             encoding: {
