@@ -166,23 +166,21 @@
                  }
              });
              
-             const prio1 = ['BRCA1', 'BRCA2', 'CDKN2A', 'PTEN', 'RB1', 'STK11', 'TP53'];
-             const prio2 = ['APC', 'ATM', 'BAP1', 'CDH1', 'MLH1', 'MSH2', 'MSH6', 'NF1', 'NF2', 'RAD51C', 'VHL'];
-             const prio3 = ['AR','BRAF','CCND1','CCNE1','CDK4','CDK6','EGFR','ERBB2','ERBB3',
+             const prio1 = ['BRCA1', 'BRCA2', 'CDKN2A', 'PTEN', 'RB1', 'STK11', 'TP53', 'APC', 'ATM', 'BAP1', 'CDH1', 'MLH1', 'MSH2', 'MSH6', 'NF1', 'NF2', 'RAD51C', 'VHL'];
+             const prio2 = ['AR','BRAF','CCND1','CCNE1','CDK4','CDK6','EGFR','ERBB2','ERBB3',
                             'FGFR1','FGFR3','KRAS','MCL1','MDM2','MET','MITF','MYC','MYCL1',
                             'MYCN','NKX2-1','PDGFRA','PIK3CA','SOX2','TERT','ZNF703'];
 
              function getGeneClass(gene) {
-                 if (prio1.includes(gene) || prio2.includes(gene)) return 'gene-red';
-                 if (prio3.includes(gene)) return 'gene-green';
+                 if (prio1.includes(gene)) return 'gene-red';
+                 if (prio2.includes(gene)) return 'gene-green';
                  return '';
              }
 
              function getPrio(gene) {
                  if (prio1.includes(gene)) return 1;
                  if (prio2.includes(gene)) return 2;
-                 if (prio3.includes(gene)) return 3;
-                 return 4;
+                 return 3;
              }
              
              tableData = Object.values(uniqueGenes);
