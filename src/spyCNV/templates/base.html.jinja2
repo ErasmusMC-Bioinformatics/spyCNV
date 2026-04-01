@@ -17,7 +17,7 @@
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
          .gridjs-tbody tr { height: auto !important; vertical-align: top; }
          .gridjs-wrapper { height: auto !important; max-height: 600px; }
-         .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; }
+         .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; cursor: pointer; }
          .gene-red { color: #f08080; font-weight: 600; }
          .gene-green { color: #1a8a35; font-weight: 600; }
         </style>
@@ -118,7 +118,6 @@
 
          renderPlot();
          
-         // --- Table Logic ---
          let tableData = [];
          let grid = null;
          
@@ -234,8 +233,8 @@
                  
                  if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 500000) },
-                         { chrom: chr, pos: end + 500000 }
+                         { chrom: chr, pos: Math.max(0, start - 20000) },
+                         { chrom: chr, pos: end + 20000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                  }
