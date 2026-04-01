@@ -5,7 +5,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader
 
-from spyCNV.io.loaders import CNVData, load_resource
+from spyCNV.io.loaders import CNVData, create_cnv_data, load_resource
 
 _APP = "spyCNV"
 _PKG = files(_APP)
@@ -21,6 +21,28 @@ def _load_json(path_parts: list[str]):
     content = (_PKG.joinpath(*path_parts)).read_text()
     json_content = json.loads(content)
     return json.dumps(json_content)
+
+
+def generate_html(
+    sample_id: str,
+    vcf: str | None,
+    tn: str | None,
+    ballele: str | None,
+    logratio: str | None,
+    segments: str | None,
+    output_path: str,
+):
+    cnv_data = create_cnv_data(
+        sample_id=sample_id,
+        tn_file=tn,
+        filtered_vcf=vcf,
+        logratio_file=logratio,
+        ballele_file=ballele,
+        segment_file=segments,
+    )
+    html_content = render_html(sample_id=sample_id, cnv_data=cnv_data)
+    out_file = Path(output_path, f"{sample_id}.spyCNV.html")
+    write_file(str(out_file), html_content)
 
 
 def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
@@ -42,11 +64,42 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
         "refseq": load_resource(
             Path("data", f"refSeq_genes_scored_compressed.{genome}.tsv")
         ),
-        "hrd_baf": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.hrd.baf] if cnv_data.hrd else None,
-        "hrd_logratio": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.hrd.logratio] if cnv_data.hrd else None,
-        "tso500_baf": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.tso500.baf] if cnv_data.tso500 else None,
-        "tso500_logratio": [{"contig": r.contig, "start": r.start, "name": r.name, "value": r.value} for r in cnv_data.tso500.logratio] if cnv_data.tso500 else None,
-        "segments": [{"contig": r.contig, "start": r.start, "end": r.end, "name": r.name, "value": r.value} for r in cnv_data.segments] if cnv_data.segments else None,
+        "hrd_baf": [
+            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            for r in cnv_data.hrd.baf
+        ]
+        if cnv_data.hrd
+        else None,
+        "hrd_logratio": [
+            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            for r in cnv_data.hrd.logratio
+        ]
+        if cnv_data.hrd
+        else None,
+        "tso500_baf": [
+            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            for r in cnv_data.tso500.baf
+        ]
+        if cnv_data.tso500
+        else None,
+        "tso500_logratio": [
+            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            for r in cnv_data.tso500.logratio
+        ]
+        if cnv_data.tso500
+        else None,
+        "segments": [
+            {
+                "contig": r.contig,
+                "start": r.start,
+                "end": r.end,
+                "name": r.name,
+                "value": r.value,
+            }
+            for r in cnv_data.segments
+        ]
+        if cnv_data.segments
+        else None,
     }
 
     html = template.render(
