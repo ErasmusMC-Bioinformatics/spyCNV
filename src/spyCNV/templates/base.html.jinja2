@@ -181,7 +181,16 @@
                  if (prio2.includes(gene)) return 2;
                  return 3;
              }
-             
+
+             function chrOrder(chr) {
+                 const val = chr.replace('chr', '').trim();
+                 if (!isNaN(val)) return parseInt(val);
+                 if (val === 'X') return 23;
+                 if (val === 'Y') return 24;
+                 if (val === 'M') return 25;
+                 return 99;
+             }
+
              tableData = Object.values(uniqueGenes);
              tableData.sort((a, b) => {
                  const pA = getPrio(a.gene);
@@ -192,7 +201,12 @@
              
              grid = new gridjs.Grid({
                  columns: [
-                     'Chr',
+                     {
+                         name: 'Chr',
+                         sort: {
+                             compare: (a, b) => chrOrder(a) - chrOrder(b)
+                         }
+                     },
                      {
                          name: 'Gene',
                          formatter: (cell) => {
