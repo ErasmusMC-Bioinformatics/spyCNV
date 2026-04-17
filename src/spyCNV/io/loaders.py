@@ -34,6 +34,16 @@ class CNVDict(BaseModel):
     baf: list[CNVRecord]
     logratio: list[CNVRecord]
 
+    def filter_logratio_by_baf(self) -> "CNVDict":
+        baf_positions = {(r.contig, r.start) for r in self.baf}
+        return self.model_copy(
+            update={
+                "logratio": [
+                    r for r in self.logratio if (r.contig, r.start) in baf_positions
+                ]
+            }
+        )
+
 
 class CNVData(BaseModel):
     hrd: CNVDict | None = None
@@ -219,7 +229,9 @@ def create_cnv_data(
             logratio_file, type="tsv", header=["chrom", "pos", "end", "name", "value"]
         )
         logratio_records = parse_generic_tsv(lr_rows)
-        hrd_dict = CNVDict(baf=baf_records, logratio=logratio_records)
+        hrd_dict = CNVDict(
+            baf=baf_records, logratio=logratio_records
+        ).filter_logratio_by_baf()
 
     if filtered_vcf and tn_file:
         vcf_rows = load_input(filtered_vcf, type="vcf")
