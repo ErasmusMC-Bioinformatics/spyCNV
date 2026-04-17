@@ -18,8 +18,8 @@
          .gridjs-tbody tr { height: auto !important; vertical-align: top; }
          .gridjs-wrapper { height: auto !important; max-height: 600px; }
          .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; cursor: pointer; }
-         .gene-red { color: #f08080; font-weight: 600; }
-         .gene-green { color: #1a8a35; font-weight: 600; }
+         .gene-prio1 { color: #E69F00; font-weight: 300; }
+         .gene-prio2 { color: #A55AF4; font-weight: 300; }
         </style>
         <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
         <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -81,7 +81,8 @@
 
          function getSpec() {
              return {
-                 "genome": { "name": "hg19" },
+                 "assembly": "hg19",
+                 "params": [{ "name": "brush" }],
                  "vconcat": [
                      ideogramTrack(cytobandData),
                      logratioTrack(hrd_logratio, tso500_logratio, segments),
@@ -171,8 +172,8 @@
                             'MYCN','NKX2-1','PDGFRA','PIK3CA','SOX2','TERT','ZNF703'];
 
              function getGeneClass(gene) {
-                 if (prio1.includes(gene)) return 'gene-red';
-                 if (prio2.includes(gene)) return 'gene-green';
+                 if (prio1.includes(gene)) return 'gene-prio1';
+                 if (prio2.includes(gene)) return 'gene-prio2';
                  return '';
              }
 
@@ -247,8 +248,8 @@
                  
                  if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 20000) },
-                         { chrom: chr, pos: end + 20000 }
+                         { chrom: chr, pos: Math.max(0, start - 100000) },
+                         { chrom: chr, pos: end + 100000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                  }
