@@ -15,6 +15,7 @@
          #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
          #filter-select { padding: 5px; flex: 1; }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
          .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
          .gridjs-th {padding: 4px 8px !important; font-size: 0.82rem !important;}
          .gridjs-wrapper {height: auto !important; max-height: 700px;}
@@ -27,6 +28,8 @@
          .gain { color: #D73027; font-weight: 300; }
          .loss { color: #4575B4; font-weight: 300; }
          .deeploss { color: #1A237E; font-weight: 300; }
+         .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
+
         </style>
         <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
         <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -199,13 +202,36 @@
              }
 
              function annotateCNVstatus(log) {
-                 log_fl = parseFloat(log)
-                 if (log_fl >= 0.5) return `<span class="gain">🡱</span>${log}`
-                 if (-0.5 >= log_fl && log_fl > -1) return `<span class="loss">🡳</span>${log}`
-                 if (-1 >= log_fl) return `<span class="deeploss">🡳🡳</span>${log}`
-                 return `${log}`
-             }
+                 const log_fl = parseFloat(log);
+                 let symbol = '';
+                 let cls = '';
 
+                 if (log_fl >= 0.5) {
+                     symbol = '🡱';
+                     cls = 'gain';
+                 } else if (log_fl <= -1) {
+                     symbol = '🡳🡳';
+                     cls = 'deeploss';
+                 } else if (log_fl < -0.5) {
+                     symbol = '🡳';
+                     cls = 'loss';
+                 }
+
+                 if (symbol) {
+                     return `<div class="cnv-cell">
+                    <span class="${cls}">${symbol}</span>
+                    <span style="text-align: right;">
+                        ${log_fl.toFixed(3)}
+                    </span>
+                </div>`;
+                 }
+                 return `<div class="cnv-cell">
+                    <span class="${cls}">${symbol}</span>
+                    <span style="text-align: right;">
+                        ${log_fl.toFixed(3)}
+                    </span>
+                </div>`;
+             }
              function chrOrder(chr) {
                  const val = chr.replace('chr', '').trim();
                  if (!isNaN(val)) return parseInt(val);
