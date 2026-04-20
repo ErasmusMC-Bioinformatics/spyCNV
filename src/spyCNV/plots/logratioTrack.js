@@ -68,14 +68,26 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
         layers.push({
             data: { values: segments, format: { type: "json" } },
             transform: [
-                { type: "formula", expr: `datum.value > 6 ? 6 : (datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" }
+                { type: "formula", expr: `datum.value > 6 ? 6 : (datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
+                {
+                    type: "formula",
+                    expr: "datum.value >= 0.5 ? 'gain' : (datum.value > -0.5 ? 'neutral' : (datum.value <= -1 ? 'deeploss' : 'loss'))",
+                    as: "cnvStatus"
+                }
             ],
-            mark: { type: "rule", clip: true, size: 3, tooltip: null },
+            mark: { type: "rule", clip: true, size: 3, opacity: 0.8 },
             encoding: {
                 x: Object.assign({}, xEncoding, { pos: "start" }),
                 x2: { chrom: "contig", pos: "end", type: "locus" },
                 y: yEncoding,
-                color: { value: "#000000" },
+                color: {
+                    field: "cnvStatus",
+                    type: "nominal",
+                    scale: {
+                        domain: ["gain", "neutral", "loss", "deeploss"],
+                        range: ["#D73027", "#000000", "#4575B4", "#1A237E"]
+                    }
+                },
                 tooltip: [
                     { field: "contig", type: "nominal", title: "Chromosome" },
                     { field: "start", type: "quantitative", title: "Start Position" },
