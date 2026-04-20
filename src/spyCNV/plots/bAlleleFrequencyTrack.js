@@ -21,7 +21,7 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
         layers.push({
             data: { name: "hrd_baf" },
             transform: [],
-            mark: { type: "point", clip: false, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
+            mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding, y: yEncoding,
                 color: { value: "#8589ff" }, stroke: { value: "#3c45e8" },
@@ -38,7 +38,7 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
         layers.push({
             data: { name: "tso500_baf" },
             transform: [],
-            mark: { type: "point", clip: false, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
+            mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding, y: yEncoding,
                 color: { value: "#8589ff" }, stroke: { value: "#3c45e8" },
