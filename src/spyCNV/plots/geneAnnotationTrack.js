@@ -6,7 +6,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         "The scoring method: https://docs.higlass.io/data_preparation.html#gene-annotation-tracks",
         "Some background: https://www.nature.com/articles/d41586-017-07291-9"
     ],
-
+    params: [{ name: "symbolFontSize", value: 11 }],
     height: options.height ?? 70,
 
     data: {
@@ -27,8 +27,6 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
     },
 
     transform: [
-        // We linearize the coordinate upfront to make it more straightforward to fit the top n gene symbols
-        // into the available space.
         {
             type: "linearizeGenomicCoordinate",
             chrom: "chrom",
@@ -37,21 +35,18 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         },
         {
             type: "formula",
-            expr: "datum._start + +datum.length",
+            expr: "datum._start + datum.length",
             as: "_end"
         },
-        // Centroid is used for centering the gene symbols
         {
             type: "formula",
-            expr: "datum._start + datum.length / 2",
-            as: "_centroid"
+            expr: "datum.score >= 20000 ? 'priority' : (datum.score >= 10000 ? 'oncogene' : 'normal')",
+            as: "geneClass"
         },
-        // Pileup needs sorted data
         {
             type: "collect",
             sort: { field: ["_start"] }
         },
-        // Choose lanes for genes.
         {
             type: "pileup",
             start: "_start",
@@ -60,19 +55,14 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
             preference: "strand",
             preferredOrder: ["-", "+"]
         },
-        // Display a maximum of three lanes to conserve space.
         {
             type: "filter",
             expr: "datum._lane < 3"
-        },
-        {
-            type: "formula",
-            expr: "datum.score >= 20000 ? 'priority' : (datum.score >= 10000 ? 'oncogene' : 'normal')",
-            as: "priorityStatus"
         }
     ],
 
     encoding: {
+        x: { axis: null },
         y: {
             field: "_lane",
             type: "ordinal",
@@ -83,7 +73,6 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                 paddingOuter: 0.2,
                 domain: [0, 3],
                 reverse: true,
-                // Index scale is zoomable by default. Prevent it.
                 zoom: false
             },
             axis: null
@@ -94,64 +83,74 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
         {
             name: "transcripts",
 
-            // Implement semantic zooming by making the layer visible only when zoomed close enough.
             opacity: {
-                // Units per pixel = Base pairs per pixel
                 unitsPerPixel: [100000, 40000],
                 values: [0, 1]
             },
 
-            encoding: {
-                color: {
-                    field: "priorityStatus",
-                    type: "nominal",
-                    scale: {
-                        domain: ["normal", "oncogene", "priority"],
-                        range: ["#606060", "#1a8a35", "#cc0000"]
-                    },
-                    legend: null
-                }
-            },
-
             layer: [
                 {
-                    name: "exons",
-
-                    transform: [
-                        // Save memory by getting rid of extra field – Only retain the required ones
-                        { type: "project", fields: ["_lane", "_start", "exons", "priorityStatus", "score"] },
-                        // The data file uses delta encoding for alternating exon/intron lengths to compress it.
-                        // This transform decompresses it and generates a new data item for each exon.
-                        { type: "flattenCompressedExons", start: "_start" }
-                    ],
-
-                    mark: {
-                        type: "rect",
-                        minOpacity: 0.2,
-                        minWidth: 0.5,
-                        buildIndex: true,
-                        tooltip: null
-                    },
-
-                    encoding: {
-                        x: { field: "exonStart", type: "locus" },
-                        x2: { field: "exonEnd" }
-                    }
-                },
-                {
                     name: "bodies",
+
+                    title: "Gene annotations",
 
                     mark: {
                         type: "rule",
                         minLength: 0.5,
                         size: 1,
-                        buildIndex: true,
+                        yOffset: 0.5,
                         tooltip: null
                     },
                     encoding: {
                         x: { field: "_start", type: "locus", axis: null },
-                        x2: { field: "_end" },
-                        search: { field: "symbol", type: "nominal" }
+                        x2: { field: "_end", band: 0 },
+                        search: { field: "symbol" },
+                        color: {
+                            field: "geneClass",
+                            type: "nominal",
+                            scale: {
+                                domain: ["priority", "oncogene", "normal"],
+                                range: ["#E69F00", "#A55AF4", "#b0b0b0"]
+                            }
+                        }
+                    }
+                },
+                {
+                    name: "exons",
+
+                    transform: [
+                        { type: "project", fields: ["_lane", "_start", "exons", "geneClass"] },
+                        { type: "flattenCompressedExons", start: "_start" }
+                    ],
+
+                    mark: {
+                        type: "rect",
+                        strokeWidth: 1,
+                        minOpacity: 0.2,
+                        minWidth: 0.1,
+                        yOffset: 0.5,
+                        tooltip: null
+                    },
+
+                    encoding: {
+                        x: { field: "exonStart", type: "locus" },
+                        x2: { field: "exonEnd" },
+                        stroke: {
+                            field: "geneClass",
+                            type: "nominal",
+                            scale: {
+                                domain: ["priority", "oncogene", "normal"],
+                                range: ["#E69F00", "#A55AF4", "#b0b0b0"]
+                            }
+                        },
+                        fill: {
+                            field: "geneClass",
+                            type: "nominal",
+                            scale: {
+                                domain: ["priority", "oncogene", "normal"],
+                                range: ["#FDE8C5", "#EEDDF5", "#f0f0f0"]
+                            }
+                        }
                     }
                 }
             ]
@@ -160,24 +159,22 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
             name: "symbols",
 
             transform: [
-                // Measures the widths of the symbol labels. Used by the subsequent transform.
+                { type: "collect" },
                 {
                     type: "measureText",
-                    fontSize: 11,
+                    fontSize: { expr: "symbolFontSize" },
                     field: "symbol",
                     as: "_textWidth"
                 },
-                // The following transform buffers the data items and reflows a subset of them when the scale
-                // domain associated with the "_centroid" field is changed, i.e., the user zooms or pans.
-                // The transform chooses the top n (by score) data items from the domain and eagerly tries to
-                // fit them into the available space. If there was no space, the next data item is tried.
                 {
                     type: "filterScoredLabels",
                     lane: "_lane",
                     score: "score",
                     width: "_textWidth",
-                    pos: "_centroid",
-                    padding: 5
+                    pos: "_start",
+                    pos2: "_end",
+                    asMidpoint: "_midpoint",
+                    padding: 8
                 }
             ],
 
@@ -186,33 +183,30 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                     name: "labels",
                     mark: {
                         type: "text",
-                        size: 11,
+                        size: { expr: "symbolFontSize" },
                         yOffset: 7,
                         tooltip: {
-                            // Using a custom tooltip handler that fetches summary descriptions from RefSeq Gene
                             handler: "refseqgene"
                         }
                     },
                     encoding: {
                         x: {
-                            field: "_centroid",
+                            field: "_midpoint",
                             type: "locus"
                         },
-                        text: { field: "symbol", type: "nominal" },
+                        text: { field: "symbol" },
                         color: {
-                            field: "priorityStatus",
+                            field: "geneClass",
                             type: "nominal",
                             scale: {
-                                domain: ["normal", "oncogene", "priority"],
-                                range: ["black", "#22aa44", "red"]
-                            },
-                            legend: null
+                                domain: ["priority", "oncogene", "normal"],
+                                range: ["#b37b00", "#763cb5", "black"]
+                            }
                         }
                     }
                 },
                 {
                     name: "arrows",
-                    // Semantic zooming
                     opacity: {
                         unitsPerPixel: [100000, 40000],
                         values: [0, 1]
@@ -225,7 +219,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                     },
                     encoding: {
                         x: {
-                            field: "_centroid",
+                            field: "_midpoint",
                             type: "locus"
                         },
                         dx: {
@@ -234,13 +228,12 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             scale: null
                         },
                         color: {
-                            field: "priorityStatus",
+                            field: "geneClass",
                             type: "nominal",
                             scale: {
-                                domain: ["normal", "oncogene", "priority"],
-                                range: ["black", "#22aa44", "red"]
-                            },
-                            legend: null
+                                domain: ["priority", "oncogene", "normal"],
+                                range: ["#b37b00", "#763cb5", "black"]
+                            }
                         },
                         shape: {
                             field: "strand",
