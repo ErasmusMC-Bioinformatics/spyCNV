@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <title>{{ sample_id }}</title>
         <style>
-         body { margin: 0; font-family: sans-serif; display: flex; flex-direction: column; }
+         body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; }
          #header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
          h1 { margin: 0; font-size: 1.5rem; }
          .controls { display: flex; gap: 15px; align-items: center; }
@@ -15,11 +15,15 @@
          #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
          #filter-select { padding: 5px; flex: 1; }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-         .gridjs-tbody tr { height: auto !important; vertical-align: top; }
-         .gridjs-wrapper { height: auto !important; max-height: 600px; }
-         .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; cursor: pointer; }
-         .gene-prio1 { color: #E69F00; font-weight: 300; }
-         .gene-prio2 { color: #A55AF4; font-weight: 300; }
+         .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
+         .gridjs-th {padding: 4px 8px !important; font-size: 0.82rem !important;}
+         .gridjs-wrapper {height: auto !important; max-height: 700px;}
+         .gridjs-search input {padding: 3px 8px !important; font-size: 0.82rem !important;}
+         .gridjs-tbody tr {height: auto !important; vertical-align: middle !important;}
+         .gridjs-tbody .gridjs-tr:hover td { background-color: #f7f7f7 !important; transition: background-color 0.1s ease-out; cursor: pointer; }
+         .gridjs-sort { height: 14px !important; width: 10px !important; }
+         .gene-prio1 { color: #E69F00; font-weight: 500; }
+         .gene-prio2 { color: #A55AF4; font-weight: 500; }
          .gain { color: #D73027; font-weight: 300; }
          .loss { color: #4575B4; font-weight: 300; }
          .deeploss { color: #1A237E; font-weight: 300; }
@@ -100,6 +104,12 @@
              if (!embedResult) return;
              const showHrd    = (value === 'both' || value === 'hrd');
              const showTso500 = (value === 'both' || value === 'tso500');
+
+             let min_hrd_log = Math.min(...hrd_logratio.map(r => r.value));
+             let min_tso_log = Math.min(...tso500_logratio.map(r => r.value));
+             const show_min_logratio = (value === 'hrd' && min_hrd_log <= -3) || (value == 'tso500' && min_tso_log <= -3);
+
+             embedResult.updateNamedData("min_logratio", showHrd ? min_logratio : []);
              embedResult.updateNamedData("hrd_logratio",    showHrd    ? hrd_logratio    : []);
              embedResult.updateNamedData("tso500_logratio", showTso500 ? tso500_logratio : []);
              embedResult.updateNamedData("hrd_baf",    showHrd    ? hrd_baf    : []);
@@ -114,6 +124,7 @@
                  if (name === "tso500_logratio") return tso500_logratio ?? [];
                  if (name === "hrd_baf")          return hrd_baf         ?? [];
                  if (name === "tso500_baf")      return tso500_baf     ?? [];
+                 if (name === "min_logratio")      return min_logratio     ?? [];
              };
              genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
                 embedResult = res;
