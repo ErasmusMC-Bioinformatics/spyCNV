@@ -78,6 +78,7 @@
          const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
          const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
          const segments = {{ data.segments | tojson | default('null', true) }};
+         const min_logratio = [{ value: -3 }];
          
          let embedResult = null;
          let genomeScale = null;
