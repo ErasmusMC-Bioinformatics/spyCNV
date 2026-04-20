@@ -24,10 +24,8 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
     };
 
     const clampOutliers = [
-        // { type: "formula", expr: `datum.value > ${clampMax} ? ${clampMax} : (datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
         { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
-        // { type: "formula", expr: `datum.value > ${clampMax} || datum.value < ${clampMin} ? 'outlier' : 'normal'`, as: "_outlierStatus" }
-        { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'normal'`, as: "_outlierStatus" }
+        { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
     // layers.push({
@@ -43,35 +41,27 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
     //     }
     // });
 
-    if (hrdData) {
-        layers.push({
-            data: { name: "hrd_logratio" },
+    const logratio_data_encoding = function(data_name) {
+        return {
+            data: { name: data_name },
             transform: clampOutliers,
-            // mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding,
                 y: yEncoding,
-                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#8589ff", "red"] }, legend: null },
-                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
+                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
+                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
                 tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }]
             }
-        });
+        }
+    }
+
+    if (hrdData) {
+        layers.push(logratio_data_encoding("hrd_logratio"));
     }
 
     if (tso500Data) {
-        layers.push({
-            data: { name: "tso500_logratio" },
-            transform: clampOutliers,
-            mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
-            encoding: {
-                x: xEncoding,
-                y: yEncoding,
-                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#ffb14e", "red"] }, legend: null },
-                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["normal", "outlier"], range: ["#3c45e8", "darkred"] }, legend: null },
-                tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }]
-            }
-        });
+        layers.push(logratio_data_encoding("tso500_logratio"));
     }
 
     if (segments) {
@@ -100,6 +90,12 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
         name: "logratioTrack",
         height: options.height ?? 350,
         layer: layers,
-        resolve: { scale: { y: "shared" } }
+        resolve: {
+            scale: {
+                y: "shared",
+                color: "independent",
+                stroke: "independent"
+            }
+        },
     };
 };
