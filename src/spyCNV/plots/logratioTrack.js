@@ -28,18 +28,18 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
-    // layers.push({
-    //     data: { values: [{ value: -3 }] },
-    //     mark: { type: "rule", clip: false, size: 1, opacity: 0.3 },
-    //     tooltip: false,
-    //     encoding: {
-    //         y: {
-    //             field: "value",
-    //             type: "quantitative"
-    //         },
-    //         color: { value: "#4575B4" }
-    //     }
-    // });
+    layers.push({
+        data: { name: "min_logratio" },
+        mark: { type: "rule", clip: false, size: 1, opacity: 0.3 },
+        tooltip: false,
+        encoding: {
+            y: {
+                field: "value",
+                type: "quantitative"
+            },
+            color: { value: "#D73027" }
+        }
+    });
 
     const logratio_data_encoding = function(data_name) {
         return {
