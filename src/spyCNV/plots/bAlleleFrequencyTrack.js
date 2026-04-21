@@ -44,7 +44,7 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
 
     return {
         name: "bAlleleFrequencyTrack",
-        height: options.height ?? 350,
+        height: options.height ?? 300,
         layer: layers,
         resolve: { scale: { y: "shared" } }
     };
