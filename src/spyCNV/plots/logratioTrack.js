@@ -100,7 +100,7 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
 
     return {
         name: "logratioTrack",
-        height: options.height ?? 350,
+        height: options.height ?? 300,
         layer: layers,
         resolve: {
             scale: {
