@@ -75,7 +75,6 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
                     as: "cnvStatus"
                 }
             ],
-            mark: { type: "rule", clip: true, size: 3, opacity: 0.8 },
             encoding: {
                 x: Object.assign({}, xEncoding, { pos: "start" }),
                 x2: { chrom: "contig", pos: "end", type: "locus" },
@@ -94,7 +93,17 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
                     { field: "end", type: "quantitative", title: "End Position" },
                     { field: "value", type: "quantitative", title: "Log2", format: ".3f" }
                 ]
-            }
+            },
+            stops: [30000],
+            multiscale: [
+                {
+                    transform: [{ type: "filter", expr: "datum.cnvStatus !== 'neutral'" }],
+                    mark: { type: "rect", minWidth: 5, cornerRadius: 5, clip: true, size: 3, opacity: 0.7 }
+                },
+                {
+                    mark: { type: "rule", clip: true, size: 3, opacity: 0.8 }
+                }
+            ]
         });
     }
 
