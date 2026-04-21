@@ -73,9 +73,6 @@
          {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
-         {% if plots.segment %}
-         {{ plots.segment }}
-         {% endif %}
 
          const cytobandData = `{{ data.cytoband | safe }}`;
          const refseqGenes = `{{ data.refseq | safe }}`;
