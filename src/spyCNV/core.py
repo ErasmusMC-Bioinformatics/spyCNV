@@ -16,13 +16,6 @@ def write_file(file: str, content: str):
         f.write(content)
 
 
-def _load_json(path_parts: list[str]):
-    # TODO: Replace the load json with io loaders
-    content = (_PKG.joinpath(*path_parts)).read_text()
-    json_content = json.loads(content)
-    return json.dumps(json_content)
-
-
 def generate_html(
     sample_id: str,
     vcf: str | None,
@@ -56,7 +49,6 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
         "logratio": load_resource(Path("plots", "logratioTrack.js")),
         "baf": load_resource(Path("plots", "bAlleleFrequencyTrack.js")),
         "geneAnnotation": load_resource(Path("plots", "geneAnnotationTrack.js")),
-        "segment": load_resource(Path("plots", "segmentTrack.js")),
     }
 
     data: dict[str, str | list[dict] | None] = {
