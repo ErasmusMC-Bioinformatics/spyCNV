@@ -300,8 +300,8 @@
                  
                  if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 100000) },
-                         { chrom: chr, pos: end + 100000 }
+                         { chrom: chr, pos: Math.max(0, start - 3000000) },
+                         { chrom: chr, pos: end + 3000000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                  }
