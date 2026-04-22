@@ -31,10 +31,9 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
     layers.push({
         data: { name: "min_logratio" },
         mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
-        tooltip: null,
         encoding: {
             y: {
-                field: "value",
+                field: "_value",
                 type: "quantitative"
             },
             color: { value: "#D73027" }
