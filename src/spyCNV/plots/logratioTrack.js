@@ -55,6 +55,16 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
         }
     }
 
+    const cnvStatus_encoding = {
+        field: "cnvStatus",
+        type: "nominal",
+        scale: {
+            domain: ["gain", "neutral", "loss", "deeploss"],
+            range: ["#D73027", "#000000", "#4575B4", "#1A237E"]
+        }
+    }
+
+
     if (hrdData) {
         layers.push(logratio_data_encoding("hrd_logratio"));
     }
@@ -78,14 +88,8 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
                 x: Object.assign({}, xEncoding, { pos: "start" }),
                 x2: { chrom: "contig", pos: "end", type: "locus" },
                 y: yEncoding,
-                color: {
-                    field: "cnvStatus",
-                    type: "nominal",
-                    scale: {
-                        domain: ["gain", "neutral", "loss", "deeploss"],
-                        range: ["#D73027", "#000000", "#4575B4", "#1A237E"]
-                    }
-                },
+                stroke: cnvStatus_encoding,
+                color: cnvStatus_encoding,
                 tooltip: [
                     { field: "contig", type: "nominal", title: "Chromosome" },
                     { field: "start", type: "quantitative", title: "Start Position" },
@@ -97,7 +101,8 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
             multiscale: [
                 {
                     transform: [{ type: "filter", expr: "datum.cnvStatus !== 'neutral'" }],
-                    mark: { type: "rect", minWidth: 5, cornerRadius: 5, clip: true, size: 3, opacity: 0.7 }
+                    mark: { type: "rect", minWidth: 5, cornerRadius: 5, clip: true, size: 3, fillOpacity: 0.4, strokeWidth: 2, strokeOpacity: 0.6 }
+                    // mark: { type: "rect", minWidth: 5, cornerRadius: 5, clip: true, size: 3, opacity: 0.7 }
                 },
                 {
                     mark: { type: "rule", clip: true, size: 3, opacity: 0.8 }
