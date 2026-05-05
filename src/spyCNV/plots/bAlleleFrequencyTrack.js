@@ -1,4 +1,4 @@
-const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
+const bAlleleFrequencyTrack = (hrdData, tso500Data, cytobandData, options = {}) => {
     let layers = [];
 
     const xEncoding = {
@@ -17,43 +17,63 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
         axis: { values: [0, 0.2, 0.4, 0.6, 0.8, 1.0], grid: true, title: "B-Allele Frequency" }
     };
 
-    if (hrdData) {
-        layers.push({
-            data: { name: "hrd_baf" },
+    const baf_data_encoding = function(data_name) {
+        return {
+            data: { name: data_name },
             transform: [],
-            mark: { type: "point", clip: false, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
+            mark: { type: "point", clip: true, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
             encoding: {
                 x: xEncoding, y: yEncoding,
-                color: { value: "#8589ff" }, stroke: { value: "#3c45e8" },
+                color: { value: "#c3ced8" }, stroke: { value: "#8696a2" },
                 tooltip: [
                     { field: "contig", type: "nominal", title: "Chromosome" },
                     { field: "start", type: "quantitative", title: "Position" },
                     { field: "value", type: "quantitative", title: "VAF", format: ".4f" }
                 ]
             }
-        });
+        }
+    }
+
+    if (hrdData) {
+        layers.push(baf_data_encoding("hrd_baf"));
     }
 
     if (tso500Data) {
+        layers.push(baf_data_encoding("tso500_baf"));
+    }
+
+    if (cytobandData) {
         layers.push({
-            data: { name: "tso500_baf" },
-            transform: [],
-            mark: { type: "point", clip: false, size: { "expr": "min(0.1 * pow(zoomLevel, 2), 120)" }, opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" } },
+            data: { values: cytobandData, format: { type: "tsv" } },
+            transform: [
+                { type: "filter", expr: "datum.gieStain === 'acen'" },
+                {
+                    type: "aggregate",
+                    groupby: ["chrom"],
+                    fields: ["chromStart"],
+                    ops: ["max"],
+                    as: ["pArmEnd"]
+                },
+                { type: "formula", expr: "substring(datum.chrom, 3)", as: "contig" }
+            ],
+            stops: [500000],
+            multiscale: [
+                {
+                    mark: { type: "rule", color: "#B0B8C0", strokeDash: [3, 3], size: .5, opacity: 0.4 },
+                },
+                {
+                    mark: { type: "rule", color: "#D73027", strokeDash: [3, 3], size: .5, opacity: 0.5 },
+                },
+            ],
             encoding: {
-                x: xEncoding, y: yEncoding,
-                color: { value: "#8589ff" }, stroke: { value: "#3c45e8" },
-                tooltip: [
-                    { field: "contig", type: "nominal", title: "Chromosome" },
-                    { field: "start", type: "quantitative", title: "Position" },
-                    { field: "value", type: "quantitative", title: "VAF", format: ".4f" }
-                ]
+                x: { chrom: "contig", pos: "pArmEnd", type: "locus", scale: { name: "genomeScale" } }
             }
         });
     }
 
     return {
         name: "bAlleleFrequencyTrack",
-        height: options.height ?? 350,
+        height: options.height ?? 300,
         layer: layers,
         resolve: { scale: { y: "shared" } }
     };

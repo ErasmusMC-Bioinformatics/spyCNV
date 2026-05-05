@@ -3,3 +3,4 @@ __pycache__/
 /.direnv/
 /.envrc
 /*.html
+/tmp/
