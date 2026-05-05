@@ -69,13 +69,29 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
         if cnv_data.hrd
         else None,
         "tso500_baf": [
-            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            {
+                "contig": r.contig,
+                "start": r.start,
+                "name": r.name,
+                "value": r.value,
+                "gene": r.gene,
+                "exon": r.exon,
+                "Tx": r.transcript,
+            }
             for r in cnv_data.tso500.baf
         ]
         if cnv_data.tso500
         else None,
         "tso500_logratio": [
-            {"contig": r.contig, "start": r.start, "name": r.name, "value": r.value}
+            {
+                "contig": r.contig,
+                "start": r.start,
+                "name": r.name,
+                "value": r.value,
+                "gene": r.gene,
+                "exon": r.exon,
+                "Tx": r.transcript,
+            }
             for r in cnv_data.tso500.logratio
         ]
         if cnv_data.tso500
