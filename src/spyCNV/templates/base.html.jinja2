@@ -93,9 +93,9 @@
                  "params": [{ "name": "brush" }],
                  "vconcat": [
                      ideogramTrack(cytobandData),
-                     logratioTrack(hrd_logratio, tso500_logratio, segments),
+                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData),
                      geneAnnotationTrack(refseqGenes),
-                     bAlleleFrequencyTrack(hrd_baf, tso500_baf)
+                     bAlleleFrequencyTrack(hrd_baf, tso500_baf, cytobandData)
                  ]
              };
          }
