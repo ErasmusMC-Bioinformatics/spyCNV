@@ -1,4 +1,4 @@
-const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
+const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}) => {
     let layers = [];
 
     let clampMin = -3
@@ -108,6 +108,35 @@ const logratioTrack = (hrdData, tso500Data, segments, options = {}) => {
                     mark: { type: "rule", clip: true, size: 3, opacity: 0.8 }
                 }
             ]
+        });
+    }
+
+    if (cytobandData) {
+        layers.push({
+            data: { values: cytobandData, format: { type: "tsv" } },
+            transform: [
+                { type: "filter", expr: "datum.gieStain === 'acen'" },
+                {
+                    type: "aggregate",
+                    groupby: ["chrom"],
+                    fields: ["chromStart"],
+                    ops: ["max"],
+                    as: ["pArmEnd"]
+                },
+                { type: "formula", expr: "substring(datum.chrom, 3)", as: "contig" }
+            ],
+            stops: [500000],
+            multiscale: [
+                {
+                    mark: { type: "rule", color: "#B0B8C0", strokeDash: [3, 3], size: .5, opacity: 0.4 },
+                },
+                {
+                    mark: { type: "rule", color: "#D73027", strokeDash: [3, 3], size: .5, opacity: 0.5 },
+                },
+            ],
+            encoding: {
+                x: { chrom: "contig", pos: "pArmEnd", type: "locus", scale: { name: "genomeScale" } }
+            }
         });
     }
 

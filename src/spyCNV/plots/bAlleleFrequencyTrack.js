@@ -1,4 +1,4 @@
-const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
+const bAlleleFrequencyTrack = (hrdData, tso500Data, cytobandData, options = {}) => {
     let layers = [];
 
     const xEncoding = {
@@ -40,6 +40,35 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, options = {}) => {
 
     if (tso500Data) {
         layers.push(baf_data_encoding("tso500_baf"));
+    }
+
+    if (cytobandData) {
+        layers.push({
+            data: { values: cytobandData, format: { type: "tsv" } },
+            transform: [
+                { type: "filter", expr: "datum.gieStain === 'acen'" },
+                {
+                    type: "aggregate",
+                    groupby: ["chrom"],
+                    fields: ["chromStart"],
+                    ops: ["max"],
+                    as: ["pArmEnd"]
+                },
+                { type: "formula", expr: "substring(datum.chrom, 3)", as: "contig" }
+            ],
+            stops: [500000],
+            multiscale: [
+                {
+                    mark: { type: "rule", color: "#B0B8C0", strokeDash: [3, 3], size: .5, opacity: 0.4 },
+                },
+                {
+                    mark: { type: "rule", color: "#D73027", strokeDash: [3, 3], size: .5, opacity: 0.5 },
+                },
+            ],
+            encoding: {
+                x: { chrom: "contig", pos: "pArmEnd", type: "locus", scale: { name: "genomeScale" } }
+            }
+        });
     }
 
     return {
