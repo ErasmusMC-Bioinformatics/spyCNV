@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import bisect
 import csv
 import gzip
 import io
@@ -18,6 +19,9 @@ class CNVRecord(BaseModel):
     start: int
     name: str
     value: float
+    gene: str | None = None
+    exon: str | None = None
+    transcript: str | None = None
 
     model_config: ClassVar[ConfigDict] = {"populate_by_name": True}
 
@@ -206,6 +210,75 @@ def parse_segments(rows: list[dict[str, str]]) -> list[SegmentRecord]:
     return records
 
 
+def load_exon_data() -> dict[str, list[tuple[int, int, dict[str, str]]]]:
+    try:
+        manifest_str = load_resource("data/manifest_from_ncbiRefSeq.bed")
+    except Exception:
+        return {}
+
+    intervals: dict[str, list[tuple[int, int, dict[str, str]]]] = {}
+    for line in manifest_str.splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        parts = line.strip().split("\t")
+        if len(parts) >= 4:
+            contig = parts[0].replace("chr", "")
+            try:
+                start = int(parts[1])
+                end = int(parts[2])
+                name = parts[3]
+            except ValueError:
+                continue
+
+            name_parts = name.split("_")
+            if len(name_parts) >= 3 and (
+                "Exon" in name_parts[1] or "Intron" in name_parts[1]
+            ):
+                gene = name_parts[0]
+                exon = (
+                    name_parts[1].replace("Exon", "Exon ").replace("Intron", "Intron ")
+                )
+                transcript = "_".join(name_parts[2:])
+
+                if contig not in intervals:
+                    intervals[contig] = []
+                intervals[contig].append(
+                    (
+                        start + 1,
+                        end,
+                        {"gene": gene, "exon": exon, "transcript": transcript},
+                    )
+                )
+    return intervals
+
+
+def annotate_records(
+    records: list[CNVRecord], manifest: dict[str, list[tuple[int, int, dict[str, str]]]]
+):
+    if not manifest:
+        return
+
+    sorted_manifest = {}
+    manifest_starts = {}
+    for contig, ivs in manifest.items():
+        sorted_ivs = sorted(ivs, key=lambda x: x[0])
+        sorted_manifest[contig] = sorted_ivs
+        manifest_starts[contig] = [iv[0] for iv in sorted_ivs]
+
+    for r in records:
+        if r.contig in sorted_manifest:
+            ivs = sorted_manifest[r.contig]
+            starts = manifest_starts[r.contig]
+            idx = bisect.bisect_right(starts, r.start)
+            for i in range(idx - 1, max(-1, idx - 5), -1):
+                start, end, anno = ivs[i]
+                if start <= r.start <= end:
+                    r.gene = anno["gene"]
+                    r.exon = anno["exon"]
+                    r.transcript = anno["transcript"]
+                    break
+
+
 def create_cnv_data(
     sample_id: str,
     tn_file: str | None = None,
@@ -218,6 +291,8 @@ def create_cnv_data(
     hrd_dict: CNVDict | None = None
     tso500_dict: CNVDict | None = None
     segments: list[SegmentRecord] = []
+
+    manifest = load_exon_data()
 
     if ballele_file and logratio_file:
         baf_rows = load_input(
@@ -233,12 +308,19 @@ def create_cnv_data(
             baf=baf_records, logratio=logratio_records
         ).filter_logratio_by_baf()
 
+        annotate_records(hrd_dict.baf, manifest)
+        annotate_records(hrd_dict.logratio, manifest)
+
     if filtered_vcf and tn_file:
         vcf_rows = load_input(filtered_vcf, type="vcf")
         baf_records = parse_vcf(vcf_rows)
 
         tn_rows = load_input(tn_file, type="tsv")
         logratio_records = parse_tn(tn_rows, sample_id)
+
+        annotate_records(baf_records, manifest)
+        annotate_records(logratio_records, manifest)
+
         tso500_dict = CNVDict(baf=baf_records, logratio=logratio_records)
 
     if segment_file:
