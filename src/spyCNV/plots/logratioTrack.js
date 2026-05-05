@@ -1,7 +1,7 @@
 const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}) => {
     let layers = [];
 
-    let clampMin = -3
+    let clampMin = -2.5
 
     const xEncoding = {
         chrom: "contig",
@@ -19,7 +19,7 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
     const yEncoding = {
         field: "_clampedValue",
         type: "quantitative",
-        scale: { zero: false, padding: 0.02 },
+        scale: { zero: false, padding: 0.05 },
         axis: { grid: true, title: "Log2", tickCount: 5 }
     };
 
@@ -50,7 +50,7 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                 y: yEncoding,
                 color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
                 stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
-                tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }]
+                tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }, { field: "gene", type: "nominal", title: "Gene" }, { field: "exon", type: "nominal", title: "Exon/Intron" }, { field: "transcript", type: "nominal", title: "Transcript" }]
             }
         }
     }
@@ -77,13 +77,14 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         layers.push({
             data: { values: segments, format: { type: "json" } },
             transform: [
-                { type: "formula", expr: `datum.value > 6 ? 6 : (datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
+                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
                 {
                     type: "formula",
                     expr: "datum.value >= 0.5 ? 'gain' : (datum.value > -0.5 ? 'neutral' : (datum.value <= -1 ? 'deeploss' : 'loss'))",
                     as: "cnvStatus"
                 }
             ],
+            // mark: { type: "rule", clip: true, size: 3, opacity: 0.8 },
             encoding: {
                 x: Object.assign({}, xEncoding, { pos: "start" }),
                 x2: { chrom: "contig", pos: "end", type: "locus" },
@@ -97,7 +98,7 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                     { field: "value", type: "quantitative", title: "Log2", format: ".3f" }
                 ]
             },
-            stops: [30000],
+            stops: [10000],
             multiscale: [
                 {
                     transform: [{ type: "filter", expr: "datum.cnvStatus !== 'neutral'" }],

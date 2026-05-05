@@ -82,7 +82,7 @@
          const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
          const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
          const segments = {{ data.segments | tojson | default('null', true) }};
-         const min_logratio = [{ _value: -3 }];
+         const min_logratio = [{ _value: -2.5 }];
          
          let embedResult = null;
          let genomeScale = null;
@@ -100,19 +100,22 @@
              };
          }
 
+         function showMinLogratio(showHrd, showTso500) {
+             const min_hrd_log = Math.min(...hrd_logratio.map(r => r.value));
+             const min_tso_log = Math.min(...tso500_logratio.map(r => r.value));
+             const min_logratio_value = min_logratio[0]._value
+             return (showHrd && min_hrd_log <= min_logratio_value) || (showTso500 && min_tso_log <= min_logratio_value);
+         }
+
          function updateDisplayMode(value) {
              if (!embedResult) return;
              const showHrd    = (value === 'both' || value === 'hrd');
              const showTso500 = (value === 'both' || value === 'tso500');
 
-             let min_hrd_log = Math.min(...hrd_logratio.map(r => r.value));
-             let min_tso_log = Math.min(...tso500_logratio.map(r => r.value));
-             const show_min_logratio = (value === 'hrd' && min_hrd_log <= -3) || (value == 'tso500' && min_tso_log <= -3);
-
-             embedResult.updateNamedData("min_logratio", showHrd ? min_logratio : []);
-             embedResult.updateNamedData("hrd_logratio",    showHrd    ? hrd_logratio    : []);
+             embedResult.updateNamedData("min_logratio", showMinLogratio(showHrd, showTso500) ? min_logratio : []);
+             embedResult.updateNamedData("hrd_logratio", showHrd ? hrd_logratio : []);
              embedResult.updateNamedData("tso500_logratio", showTso500 ? tso500_logratio : []);
-             embedResult.updateNamedData("hrd_baf",    showHrd    ? hrd_baf    : []);
+             embedResult.updateNamedData("hrd_baf", showHrd ? hrd_baf : []);
              embedResult.updateNamedData("tso500_baf", showTso500 ? tso500_baf : []);
          }
 
@@ -120,20 +123,19 @@
              const container = document.getElementById("visualization");
              container.innerHTML = "";
              const namedDataProvider = (name) => {
-                 if (name === "hrd_logratio")    return hrd_logratio    ?? [];
+                 if (name === "hrd_logratio") return hrd_logratio ?? [];
                  if (name === "tso500_logratio") return tso500_logratio ?? [];
-                 if (name === "hrd_baf")          return hrd_baf         ?? [];
-                 if (name === "tso500_baf")      return tso500_baf     ?? [];
-                 if (name === "min_logratio")      return min_logratio     ?? [];
+                 if (name === "hrd_baf") return hrd_baf ?? [];
+                 if (name === "tso500_baf") return tso500_baf ?? [];
+                 if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
              };
              genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
-                embedResult = res;
-                genomeScale = res.getScaleResolutionByName("genomeScale");
+                 embedResult = res;
+                 genomeScale = res.getScaleResolutionByName("genomeScale");
              });
          }
-
          renderPlot();
-         
+
          let tableData = [];
          let grid = null;
          
@@ -142,14 +144,14 @@
              
              const lines = refseqGenes.trim().split('\n');
              const genes = lines.map(line => {
-                const cols = line.split('\t');
-                return {
-                    symbol: cols[0],
-                    chrom: cols[1] ? cols[1].replace('chr', '') : '',
-                    start: parseInt(cols[2]),
-                    end: parseInt(cols[2]) + parseInt(cols[3]),
-                    score: parseInt(cols[5]) || 0
-                };
+                 const cols = line.split('\t');
+                 return {
+                     symbol: cols[0],
+                     chrom: cols[1] ? cols[1].replace('chr', '') : '',
+                     start: parseInt(cols[2]),
+                     end: parseInt(cols[2]) + parseInt(cols[3]),
+                     score: parseInt(cols[5]) || 0
+                 };
              });
              
              tableData = [];
