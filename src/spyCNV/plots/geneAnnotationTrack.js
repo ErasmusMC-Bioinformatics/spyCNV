@@ -200,7 +200,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             type: "nominal",
                             scale: {
                                 domain: ["priority", "oncogene", "normal"],
-                                range: ["#b37b00", "#763cb5", "black"]
+                                range: ["#b37b00", "#763cb5", "#8B8B8B"]
                             }
                         }
                     }
@@ -232,7 +232,7 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
                             type: "nominal",
                             scale: {
                                 domain: ["priority", "oncogene", "normal"],
-                                range: ["#b37b00", "#763cb5", "black"]
+                                range: ["#b37b00", "#763cb5", "#8B8B8B"]
                             }
                         },
                         shape: {

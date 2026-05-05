@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <title>{{ sample_id }}</title>
         <style>
-         body { margin: 0; font-family: sans-serif; display: flex; flex-direction: column; }
+         body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; }
          #header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
          h1 { margin: 0; font-size: 1.5rem; }
          .controls { display: flex; gap: 15px; align-items: center; }
@@ -15,11 +15,21 @@
          #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
          #filter-select { padding: 5px; flex: 1; }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-         .gridjs-tbody tr { height: auto !important; vertical-align: top; }
-         .gridjs-wrapper { height: auto !important; max-height: 600px; }
-         .gridjs-tbody .gridjs-tr:hover td { background-color: #f0f4ff !important; transition: background-color 0.15s ease; cursor: pointer; }
-         .gene-prio1 { color: #E69F00; font-weight: 300; }
-         .gene-prio2 { color: #A55AF4; font-weight: 300; }
+
+         .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
+         .gridjs-th {padding: 4px 8px !important; font-size: 0.82rem !important;}
+         .gridjs-wrapper {height: auto !important; max-height: 700px;}
+         .gridjs-search input {padding: 3px 8px !important; font-size: 0.82rem !important;}
+         .gridjs-tbody tr {height: auto !important; vertical-align: middle !important;}
+         .gridjs-tbody .gridjs-tr:hover td { background-color: #f7f7f7 !important; transition: background-color 0.1s ease-out; cursor: pointer; }
+         .gridjs-sort { height: 14px !important; width: 10px !important; }
+         .gene-prio1 { color: #E69F00; font-weight: 500; }
+         .gene-prio2 { color: #A55AF4; font-weight: 500; }
+         .gain { color: #D73027; font-weight: 300; }
+         .loss { color: #4575B4; font-weight: 300; }
+         .deeploss { color: #1A237E; font-weight: 300; }
+         .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
+
         </style>
         <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
         <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -63,9 +73,6 @@
          {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
-         {% if plots.segment %}
-         {{ plots.segment }}
-         {% endif %}
 
          const cytobandData = `{{ data.cytoband | safe }}`;
          const refseqGenes = `{{ data.refseq | safe }}`;
@@ -75,6 +82,7 @@
          const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
          const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
          const segments = {{ data.segments | tojson | default('null', true) }};
+         const min_logratio = [{ _value: -2.5 }];
          
          let embedResult = null;
          let genomeScale = null;
@@ -85,20 +93,29 @@
                  "params": [{ "name": "brush" }],
                  "vconcat": [
                      ideogramTrack(cytobandData),
-                     logratioTrack(hrd_logratio, tso500_logratio, segments),
+                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData),
                      geneAnnotationTrack(refseqGenes),
-                     bAlleleFrequencyTrack(hrd_baf, tso500_baf)
+                     bAlleleFrequencyTrack(hrd_baf, tso500_baf, cytobandData)
                  ]
              };
+         }
+
+         function showMinLogratio(showHrd, showTso500) {
+             const min_hrd_log = Math.min(...hrd_logratio.map(r => r.value));
+             const min_tso_log = Math.min(...tso500_logratio.map(r => r.value));
+             const min_logratio_value = min_logratio[0]._value
+             return (showHrd && min_hrd_log <= min_logratio_value) || (showTso500 && min_tso_log <= min_logratio_value);
          }
 
          function updateDisplayMode(value) {
              if (!embedResult) return;
              const showHrd    = (value === 'both' || value === 'hrd');
              const showTso500 = (value === 'both' || value === 'tso500');
-             embedResult.updateNamedData("hrd_logratio",    showHrd    ? hrd_logratio    : []);
+
+             embedResult.updateNamedData("min_logratio", showMinLogratio(showHrd, showTso500) ? min_logratio : []);
+             embedResult.updateNamedData("hrd_logratio", showHrd ? hrd_logratio : []);
              embedResult.updateNamedData("tso500_logratio", showTso500 ? tso500_logratio : []);
-             embedResult.updateNamedData("hrd_baf",    showHrd    ? hrd_baf    : []);
+             embedResult.updateNamedData("hrd_baf", showHrd ? hrd_baf : []);
              embedResult.updateNamedData("tso500_baf", showTso500 ? tso500_baf : []);
          }
 
@@ -106,19 +123,19 @@
              const container = document.getElementById("visualization");
              container.innerHTML = "";
              const namedDataProvider = (name) => {
-                 if (name === "hrd_logratio")    return hrd_logratio    ?? [];
+                 if (name === "hrd_logratio") return hrd_logratio ?? [];
                  if (name === "tso500_logratio") return tso500_logratio ?? [];
-                 if (name === "hrd_baf")          return hrd_baf         ?? [];
-                 if (name === "tso500_baf")      return tso500_baf     ?? [];
+                 if (name === "hrd_baf") return hrd_baf ?? [];
+                 if (name === "tso500_baf") return tso500_baf ?? [];
+                 if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
              };
              genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
-                embedResult = res;
-                genomeScale = res.getScaleResolutionByName("genomeScale");
+                 embedResult = res;
+                 genomeScale = res.getScaleResolutionByName("genomeScale");
              });
          }
-
          renderPlot();
-         
+
          let tableData = [];
          let grid = null;
          
@@ -127,14 +144,14 @@
              
              const lines = refseqGenes.trim().split('\n');
              const genes = lines.map(line => {
-                const cols = line.split('\t');
-                return {
-                    symbol: cols[0],
-                    chrom: cols[1] ? cols[1].replace('chr', '') : '',
-                    start: parseInt(cols[2]),
-                    end: parseInt(cols[2]) + parseInt(cols[3]),
-                    score: parseInt(cols[5]) || 0
-                };
+                 const cols = line.split('\t');
+                 return {
+                     symbol: cols[0],
+                     chrom: cols[1] ? cols[1].replace('chr', '') : '',
+                     start: parseInt(cols[2]),
+                     end: parseInt(cols[2]) + parseInt(cols[3]),
+                     score: parseInt(cols[5]) || 0
+                 };
              });
              
              tableData = [];
@@ -183,6 +200,37 @@
                  return 3;
              }
 
+             function annotateCNVstatus(log) {
+                 const log_fl = parseFloat(log);
+                 let symbol = '';
+                 let cls = '';
+
+                 if (log_fl >= 0.5) {
+                     symbol = '🡱';
+                     cls = 'gain';
+                 } else if (log_fl <= -1) {
+                     symbol = '🡳🡳';
+                     cls = 'deeploss';
+                 } else if (log_fl <= -0.5) {
+                     symbol = '🡳';
+                     cls = 'loss';
+                 }
+
+                 if (symbol) {
+                     return `<div class="cnv-cell">
+                    <span class="${cls}">${symbol}</span>
+                    <span style="text-align: right;">
+                        ${log_fl.toFixed(3)}
+                    </span>
+                </div>`;
+                 }
+                 return `<div class="cnv-cell">
+                    <span class="${cls}">${symbol}</span>
+                    <span style="text-align: right;">
+                        ${log_fl.toFixed(3)}
+                    </span>
+                </div>`;
+             }
              function chrOrder(chr) {
                  const val = chr.replace('chr', '').trim();
                  if (!isNaN(val)) return parseInt(val);
@@ -218,7 +266,13 @@
                              return cell;
                          }
                      },
-                     'Log2(FC)', 'Start', 'End'
+                     {
+                         name: 'Log2(FC)',
+                         formatter: (log) => {
+                             const log_str = annotateCNVstatus(log);
+                             return gridjs.html(log_str);
+                         }
+                     }, 'Start', { name: '_idx', hidden: true }
                  ],
                  data: () => {
                      const filter = document.getElementById("filter-select").value;
@@ -248,8 +302,8 @@
                  
                  if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 100000) },
-                         { chrom: chr, pos: end + 100000 }
+                         { chrom: chr, pos: Math.max(0, start - 3000000) },
+                         { chrom: chr, pos: end + 3000000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                  }
