@@ -1,6 +1,18 @@
 [project]
 name = "spyCNV"
 version = "0.3.0"
+requires-python = ">=3.13"
+dependencies = [
+    "jinja2",
+    "pydantic",
+    "typer",
+]
+
+[project.optional-dependencies]
+dev = [ "pytest" ]
+
+[project.scripts]
+spy = "spyCNV.cli:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -10,9 +22,6 @@ pythonpath = ["src"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[project.scripts]
-spy = "spyCNV.cli:app"
-
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
