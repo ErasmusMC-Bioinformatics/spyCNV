@@ -1,6 +1,16 @@
 .venv
 __pycache__/
-/.direnv/
-/.envrc
 /*.html
 /tmp/
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+.envrc
+
+# pre-commit
+.pre-commit-config.yaml
