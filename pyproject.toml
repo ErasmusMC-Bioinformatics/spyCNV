@@ -8,7 +8,7 @@ dependencies = [
     "typer",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [ "pytest" ]
 
 [project.scripts]

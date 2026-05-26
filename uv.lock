@@ -273,7 +273,7 @@ wheels = [
 
 [[package]]
 name = "spycnv"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
@@ -281,7 +281,7 @@ dependencies = [
     { name = "typer" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "pytest" },
 ]
@@ -290,10 +290,11 @@ dev = [
 requires-dist = [
     { name = "jinja2" },
     { name = "pydantic" },
-    { name = "pytest", marker = "extra == 'dev'" },
     { name = "typer" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest" }]
 
 [[package]]
 name = "typer"
