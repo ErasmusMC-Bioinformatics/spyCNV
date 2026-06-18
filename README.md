@@ -37,7 +37,16 @@ pip install -e .
 Alternatively, install directly from the source repository:
 
 ```bash
-pip install git+https://github.com/yourorg/spyCNV.git
+pip install git+https://github.com/dznnx/spyCNV.git
+# pin commit with commit hash
+spyCNV @ git+https://github.com/dznnx/spyCNV.git@6f70deaa9b4267dd046313c9232769e48cf78131
+```
+
+Or include in requirements.txt:
+```
+spyCNV @ git+https://github.com/dznnx/spyCNV.git
+# pin commit with commit hash
+spyCNV @ git+https://github.com/dznnx/spyCNV.git@6f70deaa9b4267dd046313c9232769e48cf78131
 ```
 
 ## Usage
