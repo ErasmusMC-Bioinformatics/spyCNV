@@ -1,16 +1,17 @@
 # spyCNV
 
-spyCNV is a modern copy number variation (CNV) analysis tool that produces standalone HTML reports. It can be used both as a command‑line application and imported as a Python library in pipelines.
+spyCNV is a modern copy number variation (CNV) analysis tool that produces standalone HTML reports. It can be used both as a command‑line application and imported as a Python library in pipelines. 
 <img width="1920" height="799" alt="image" src="https://github.com/user-attachments/assets/092b1f90-cf60-468e-b2b8-b788a3b692e8" />
 [Live Demo](https://dznnx.github.io/spyCNV/)
 
 
 ## Features
 
-- Gene annotation prioritization based on citation counts, with boosted scores for TSO500 oncogenes.
 - Generation of interactive, self‑contained HTML reports.
 - Support for both CLI usage and programmatic integration.
 - Lightweight, pure‑Python implementation with no external runtime dependencies.
+- Out‑of‑the‑box support for TSO500 pipeline outputs.
+
 
 ## Installation
 
@@ -50,21 +51,26 @@ spyCNV @ git+https://github.com/dznnx/spyCNV.git@6f70deaa9b4267dd046313c9232769e
 ```
 
 ## Usage
-
-### Command‑line interface
+Usage
+Command‑line interface
 
 ```bash
-spycnv run \
-    --input path/to/bam_or_cram \
-    --reference path/to/reference.fasta \
-    --output report.html
+spy generate [OPTIONS]
 ```
 
 Options:
 
-- `--input` – Input alignment file (BAM/CRAM).
-- `--reference` – Reference genome FASTA.
-- `--output` – Destination HTML report file.
+| Option         | Short | Description                         |
+| ------------   | ----- | ----------------------------------- |
+| `--sample-id`  | `-s`  | Sample ID                           |
+| `--vcf`        | `-v`  | Path to TSO500 hard-filtered VCF    |
+| `--tn`         | `-t`  | Path to TSO500 tn.tsv.gz (LogRatio) |
+| `--ballele`    | `-b`  | Path to HRD bAllele.tsv (BAF)       |
+| `--logratio`   | `-l`  | Path to HRD logRatio.tsv            |
+| `--segments`   | Path  | to segments file (.seg)             |
+| `--output-dir` | Path  | to output directory (default:.)     |
+
+
 
 ### As a library
 
@@ -85,13 +91,18 @@ html = generate_html(
 
 ## Example
 
-Running the following command generates a report for `sample.bam`:
+Running the following command generates a report:
 
 ```bash
-spycnv run --input sample.bam --reference hg38.fa --output sample_report.html
+spycnv generate --sample-id SAMPLE01 \
+    --vcf DnaDragenCaller/SAMPLE01/SAMPLE01.hard-filtered.vcf.gz \
+    --tn DnaDragenCaller/SAMPLE01/SAMPLE01.tn.tsv.gz \
+    --ballele Gis/SAMPLE01/SAMPLE01_bAllele.tsv \
+    --logratio Gis/SAMPLE01/SAMPLE01_logRatio.tsv \
+    --segments DnaDragenCaller/SAMPLE01/SAMPLE01.seg.merged.called
 ```
 
-The resulting `sample_report.html` contains interactive plots, a table of prioritized gene annotations, and download links for raw results.
+The resulting `SAMPLE01.spyCNV.html` contains interactive plots, a table of prioritized gene annotations.
 
 ## License
 
@@ -99,4 +110,5 @@ This project is licensed under the MIT License.
 
 ## Acknowledgements
 
-- Inspired by ReconCNV and GenomeSpy.
+- Inspired by ![reconCNV](https://github.com/rghu/reconCNV)
+- Built with ![genome-spy](https://github.com/genome-spy/genome-spy).
