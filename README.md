@@ -2,15 +2,15 @@
 
 spyCNV is a modern copy number variation (CNV) analysis tool that produces standalone HTML reports. It can be used both as a command‑line application and imported as a Python library in pipelines. 
 <img width="1920" height="799" alt="image" src="https://github.com/user-attachments/assets/092b1f90-cf60-468e-b2b8-b788a3b692e8" />
-[Live Demo](https://dznnx.github.io/spyCNV/)
+[Live Demo](https://dznnx.github.io/spyCNV/) (the test data is fictive and might contain unrealistic oncogenic patterns)
 
 
 ## Features
 
 - Generation of interactive, self‑contained HTML reports.
 - Support for both CLI usage and programmatic integration.
-- Lightweight, pure‑Python implementation with no external runtime dependencies.
-- Out‑of‑the‑box support for TSO500 pipeline outputs.
+- Lightweight Python implementation with minimal external dependencies (jinja2, pydantic, typer).
+- Out‑of‑the‑box support for Illumina DRAGEN TSO500 pipeline outputs.
 
 
 ## Installation
@@ -20,16 +20,28 @@ spyCNV is a modern copy number variation (CNV) analysis tool that produces stand
 If the project is managed with `devenv`, run:
 
 ```bash
-devenv up
+git clone git@github.com:dznnx/spyCNV.git
+cd spyCNV
+
+devenv shell
 ```
 
 This will set up a reproducible development environment defined in `devenv.nix`.
 
-### From `pyproject.toml`
-
-Install the package in a virtual environment:
-
+### Using `uv`
 ```bash
+git clone git@github.com:dznnx/spyCNV.git
+cd spyCNV
+
+uv sync
+source .venv/bin/activate
+```
+
+### Using `pip`
+```bash
+git clone git@github.com:dznnx/spyCNV.git
+cd spyCNV
+
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -39,19 +51,27 @@ Alternatively, install directly from the source repository:
 
 ```bash
 pip install git+https://github.com/dznnx/spyCNV.git
-# pin commit with commit hash
-spyCNV @ git+https://github.com/dznnx/spyCNV.git@6f70deaa9b4267dd046313c9232769e48cf78131
+```
+Or pin a specific commit:
+```bash
+pip install git+https://github.com/dznnx/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
 ```
 
 Or include in requirements.txt:
 ```
 spyCNV @ git+https://github.com/dznnx/spyCNV.git
-# pin commit with commit hash
-spyCNV @ git+https://github.com/dznnx/spyCNV.git@6f70deaa9b4267dd046313c9232769e48cf78131
+# pin commit with commit hash (replace with desired commit hash)
+spyCNV @ git+https://github.com/dznnx/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
+```
+Or pyproject.toml:
+```toml
+[project]
+dependencies = [
+    "spyCNV @ git+https://github.com/dznnx/spyCNV.git",
+]
 ```
 
 ## Usage
-Usage
 Command‑line interface
 
 ```bash
@@ -67,8 +87,8 @@ Options:
 | `--tn`         | `-t`  | Path to TSO500 tn.tsv.gz (LogRatio) |
 | `--ballele`    | `-b`  | Path to HRD bAllele.tsv (BAF)       |
 | `--logratio`   | `-l`  | Path to HRD logRatio.tsv            |
-| `--segments`   | Path  | to segments file (.seg)             |
-| `--output-dir` | Path  | to output directory (default:.)     |
+| `--segments`   |       | Path to segments file (.seg)             |
+| `--output-dir` |       | Path to output directory (default:.)     |
 
 
 
@@ -91,18 +111,29 @@ html = generate_html(
 
 ## Example
 
-Running the following command generates a report:
-
+### Quick test
+After installing, you can immediately generate a demo report using the included test data:
 ```bash
-spycnv generate --sample-id SAMPLE01 \
+spy generate --sample-id SXX-XXXT \
+    --vcf tests/data/SXX-XXXT.hard-filtered.vcf.gz \
+    --tn tests/data/SXX-XXXT.tn.tsv.gz \
+    --ballele tests/data/SXX-XXXT_bAllele.tsv \
+    --logratio tests/data/SXX-XXXT_logRatio.tsv \
+    --segments tests/data/SXX-XXXT.seg.called.merged
+```
+Output: `SXX-XXXT.spyCNV.html`
+
+### Illumina DRAGEN TSO500
+Example command matching the TSO500 output folder structure:
+```bash
+spy generate --sample-id SAMPLE01 \
     --vcf DnaDragenCaller/SAMPLE01/SAMPLE01.hard-filtered.vcf.gz \
     --tn DnaDragenCaller/SAMPLE01/SAMPLE01.tn.tsv.gz \
     --ballele Gis/SAMPLE01/SAMPLE01_bAllele.tsv \
     --logratio Gis/SAMPLE01/SAMPLE01_logRatio.tsv \
-    --segments DnaDragenCaller/SAMPLE01/SAMPLE01.seg.merged.called
+    --segments DnaDragenCaller/SAMPLE01/SAMPLE01.seg.called.merged
 ```
-
-The resulting `SAMPLE01.spyCNV.html` contains interactive plots, a table of prioritized gene annotations.
+Output: `SAMPLE01.spyCNV.html`
 
 ## License
 
@@ -110,5 +141,5 @@ This project is licensed under the MIT License.
 
 ## Acknowledgements
 
-- Inspired by ![reconCNV](https://github.com/rghu/reconCNV)
-- Built with ![genome-spy](https://github.com/genome-spy/genome-spy).
+- Inspired by [reconCNV](https://github.com/rghu/reconCNV)
+- Built with [genome-spy](https://github.com/genome-spy/genome-spy).
