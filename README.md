@@ -2,7 +2,7 @@
 
 spyCNV is a modern copy number variation (CNV) analysis tool that produces standalone HTML reports. It can be used both as a command‑line application and imported as a Python library in pipelines. 
 <img width="1920" height="799" alt="image" src="https://github.com/user-attachments/assets/092b1f90-cf60-468e-b2b8-b788a3b692e8" />
-[Live Demo](https://dznnx.github.io/spyCNV/) (the test data is fictive and might contain unrealistic oncogenic patterns)
+[Live Demo](https://ErasmusMC-Bioinformatics.github.io/spyCNV/) (the test data is fictive and might contain unrealistic oncogenic patterns)
 
 
 ## Features
@@ -20,7 +20,7 @@ spyCNV is a modern copy number variation (CNV) analysis tool that produces stand
 If the project is managed with `devenv`, run:
 
 ```bash
-git clone git@github.com:dznnx/spyCNV.git
+git clone git@github.com:ErasmusMC-Bioinformatics/spyCNV.git
 cd spyCNV
 
 devenv shell
@@ -30,7 +30,7 @@ This will set up a reproducible development environment defined in `devenv.nix`.
 
 ### Using `uv`
 ```bash
-git clone git@github.com:dznnx/spyCNV.git
+git clone git@github.com:ErasmusMC-Bioinformatics/spyCNV.git
 cd spyCNV
 
 uv sync
@@ -39,7 +39,7 @@ source .venv/bin/activate
 
 ### Using `pip`
 ```bash
-git clone git@github.com:dznnx/spyCNV.git
+git clone git@github.com:ErasmusMC-Bioinformatics/spyCNV.git
 cd spyCNV
 
 python -m venv .venv
@@ -50,24 +50,24 @@ pip install -e .
 Alternatively, install directly from the source repository:
 
 ```bash
-pip install git+https://github.com/dznnx/spyCNV.git
+pip install git+https://github.com/ErasmusMC-Bioinformatics/spyCNV.git
 ```
 Or pin a specific commit:
 ```bash
-pip install git+https://github.com/dznnx/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
+pip install git+https://github.com/ErasmusMC-Bioinformatics/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
 ```
 
 Or include in requirements.txt:
 ```
-spyCNV @ git+https://github.com/dznnx/spyCNV.git
+spyCNV @ git+https://github.com/ErasmusMC-Bioinformatics/spyCNV.git
 # pin commit with commit hash (replace with desired commit hash)
-spyCNV @ git+https://github.com/dznnx/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
+spyCNV @ git+https://github.com/ErasmusMC-Bioinformatics/spyCNV.git@0a52fc08e3b2d9a3e6de84506c7edeb246bdae01
 ```
 Or pyproject.toml:
 ```toml
 [project]
 dependencies = [
-    "spyCNV @ git+https://github.com/dznnx/spyCNV.git",
+    "spyCNV @ git+https://github.com/ErasmusMC-Bioinformatics/spyCNV.git",
 ]
 ```
 
