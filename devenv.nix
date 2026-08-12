@@ -8,7 +8,7 @@
     entr
     fd
     ruff
-    ty
+    basedpyright
   ];
 
   languages.python = {
