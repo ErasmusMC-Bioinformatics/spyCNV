@@ -41,7 +41,7 @@
          .gene-prio2 { color: #A55AF4; font-weight: 500; }
          .gain { color: #D73027; font-weight: 300; }
          .loss { color: #4575B4; font-weight: 300; }
-         .deeploss { color: #1A237E; font-weight: 300; }
+         .deeploss { color: #313695; font-weight: 300; }
          .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
 
         </style>
@@ -54,9 +54,11 @@
             <div class="controls">
                 {% if data.hrd_baf and data.tso500_baf %}
                 <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
-                <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)">All</label>
-                <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)">TSO500</label>
-                <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)">HRD</label>
+                <div class="segmented-control">
+                    <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)"><span>All</span></label>
+                    <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)"><span>TSO500</span></label>
+                    <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)"><span>HRD</span></label>
+                </div>
                 {% endif %}
             </div>
         </div>
