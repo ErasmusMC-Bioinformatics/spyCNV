@@ -91,6 +91,9 @@
              return {
                  "assembly": "hg19",
                  "params": [{ "name": "brush" }],
+                 "config": {
+                     "legend": { "disable": true }
+                 },
                  "vconcat": [
                      ideogramTrack(cytobandData),
                      logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData),
