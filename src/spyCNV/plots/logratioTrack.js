@@ -28,6 +28,10 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
+    const gainThreshold = options.gainThreshold ?? 0.5;
+    const lossThreshold = options.lossThreshold ?? -0.5;
+    const deepLossThreshold = options.deepLossThreshold ?? -1.0;
+
     layers.push({
         data: { name: "min_logratio" },
         mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
@@ -40,7 +44,32 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         }
     });
 
-    const logratio_data_encoding = function(data_name) {
+    layers.push({
+        data: { name: "gain_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#D73027" }
+        }
+    });
+    layers.push({
+        data: { name: "loss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#4575B4" }
+        }
+    });
+    layers.push({
+        data: { name: "deeploss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#1A237E" }
+        }
+    });
+
+    const logratio_data_encoding = function(data_name, extraTooltip = []) {
         return {
             data: { name: data_name },
             transform: clampOutliers,
@@ -50,7 +79,12 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                 y: yEncoding,
                 color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
                 stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
-                tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }, { field: "gene", type: "nominal", title: "Gene" }, { field: "exon", type: "nominal", title: "Exon/Intron" }, { field: "transcript", type: "nominal", title: "Transcript" }]
+                tooltip: [
+                    { field: "contig", type: "nominal", title: "Chromosome" },
+                    { field: "start", type: "quantitative", title: "Position" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    ...extraTooltip
+                ]
             }
         }
     }
@@ -70,19 +104,18 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
     }
 
     if (tso500Data) {
-        layers.push(logratio_data_encoding("tso500_logratio"));
+        layers.push(logratio_data_encoding("tso500_logratio", [
+            { field: "gene",  type: "nominal", title: "Gene" },
+            { field: "exon",  type: "nominal", title: "Exon/Intron" },
+            { field: "Tx",    type: "nominal", title: "Transcript" }
+        ]));
     }
 
     if (segments) {
         layers.push({
-            data: { values: segments, format: { type: "json" } },
+            data: { name: "segments_classified" },
             transform: [
-                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
-                {
-                    type: "formula",
-                    expr: "datum.value >= 0.5 ? 'gain' : (datum.value > -0.5 ? 'neutral' : (datum.value <= -1 ? 'deeploss' : 'loss'))",
-                    as: "cnvStatus"
-                }
+                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" }
             ],
             // mark: { type: "rule", clip: true, size: 3, opacity: 0.8 },
             encoding: {
@@ -92,10 +125,11 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                 stroke: cnvStatus_encoding,
                 color: cnvStatus_encoding,
                 tooltip: [
-                    { field: "contig", type: "nominal", title: "Chromosome" },
-                    { field: "start", type: "quantitative", title: "Start Position" },
-                    { field: "end", type: "quantitative", title: "End Position" },
-                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" }
+                    { field: "contig",    type: "nominal",     title: "Chromosome" },
+                    { field: "start",     type: "quantitative", title: "Start Position" },
+                    { field: "end",       type: "quantitative", title: "End Position" },
+                    { field: "value",     type: "quantitative", title: "Log2",      format: ".3f" },
+                    { field: "cnvStatus", type: "nominal",     title: "Status" }
                 ]
             },
             stops: [10000],
