@@ -12,8 +12,22 @@
          #visualization-container { flex: 3; overflow-y: auto; position: relative; }
          #visualization { width: 100%; height: 100%; }
          #table-container { flex: 1; padding: 15px; background: #ffffff; border-left: 1px solid #ddd; display: flex; flex-direction: column; overflow: hidden; }
-         #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
-         #filter-select { padding: 5px; flex: 1; }
+         #table-controls { margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef; }
+         .control-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+         .segmented-control { display: inline-flex; flex-wrap: wrap; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px #ced4da; background-color: #ffffff; }
+         .segmented-control label { display: inline-flex; margin: 0; padding: 0; cursor: pointer; user-select: none; }
+         .segmented-control input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+         .segmented-control span { display: inline-block; padding: 5px 10px; font-size: 0.8rem; font-weight: 500; color: #495057; background-color: #ffffff; border-right: 1px solid #ced4da; transition: background-color 0.15s ease, color 0.15s ease; }
+         .segmented-control label:last-child span { border-right: none; }
+         .segmented-control label:hover span { background-color: #f1f3f5; color: #212529; }
+         .segmented-control input[type="radio"]:checked + span { background-color: #4575B4; color: #ffffff; }
+         .toggle-container { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; user-select: none; }
+         .toggle-switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+         .toggle-switch input { opacity: 0; width: 0; height: 0; }
+         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .2s; border-radius: 18px; }
+         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .2s; border-radius: 50%; }
+         input:checked + .slider { background-color: #4575B4; }
+         input:checked + .slider:before { transform: translateX(16px); }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 
          .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
@@ -55,13 +69,24 @@
             <div id="table-container">
                 <h3>Gene Log2 Data</h3>
                 <div id="table-controls">
-                    <select id="filter-select" onchange="grid.forceRender()">
-                        <option value="All">All</option>
-                        <option value="All Amplification and Loss">All Amplification and Loss</option>
-                        <option value="Gain">Gain (Log2 > 0.5)</option>
-                        <option value="Loss">Loss (Log2 < -0.5)</option>
-                        <option value="Deep Loss">Deep Loss (Log2 < -1.0)</option>
-                    </select>
+                    <div class="control-group">
+                        <label class="toggle-container">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="prio-toggle" onchange="grid.forceRender()" checked>
+                                <span class="slider"></span>
+                            </span>
+                            <span>Priority Genes Only</span>
+                        </label>
+                    </div>
+                    <div class="control-group">
+                        <div class="segmented-control">
+                            <label><input type="radio" name="log2Filter" value="All" checked onchange="grid.forceRender()"><span>All</span></label>
+                            <label><input type="radio" name="log2Filter" value="All Amplification and Loss" onchange="grid.forceRender()"><span>All Amp &amp; Loss</span></label>
+                            <label><input type="radio" name="log2Filter" value="Gain" onchange="grid.forceRender()"><span>Gain (&gt;0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Loss" onchange="grid.forceRender()"><span>Loss (&lt;-0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span>Deep Loss (&lt;-1.0)</span></label>
+                        </div>
+                    </div>
                 </div>
                 <div id="gene-table-wrapper"></div>
             </div>
@@ -281,8 +306,13 @@
                      }, 'Start', { name: '_idx', hidden: true }
                  ],
                  data: () => {
-                     const filter = document.getElementById("filter-select").value;
+                     const filterRadio = document.querySelector('input[name="log2Filter"]:checked');
+                     const filter = filterRadio ? filterRadio.value : 'All';
+                     const prioOnly = document.getElementById("prio-toggle") ? document.getElementById("prio-toggle").checked : false;
                      let dt = tableData;
+                     if (prioOnly) {
+                         dt = dt.filter(d => getPrio(d.gene) < 3);
+                     }
                      if (filter === "Gain") {
                          dt = dt.filter(d => d.log2 > 0.5);
                      } else if (filter === "Loss") {
