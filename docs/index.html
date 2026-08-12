@@ -45,6 +45,11 @@
          .deeploss { color: #313695; font-weight: 300; }
          .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
 
+         .threshold-controls { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 8px; border-top: 1px solid #e9ecef; }
+         .threshold-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: #495057; }
+         .threshold-item label { width: 75px; flex-shrink: 0; }
+         .threshold-item input[type="range"] { flex: 1; height: 4px; border-radius: 2px; accent-color: #4575B4; cursor: pointer; }
+         .threshold-item input[type="number"] { width: 55px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #ced4da; border-radius: 4px; text-align: right; }
         </style>
         <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
         <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -85,9 +90,26 @@
                         <div class="segmented-control">
                             <label><input type="radio" name="log2Filter" value="All" checked onchange="grid.forceRender()"><span>All</span></label>
                             <label><input type="radio" name="log2Filter" value="All Amplification and Loss" onchange="grid.forceRender()"><span>All Amp &amp; Loss</span></label>
-                            <label><input type="radio" name="log2Filter" value="Gain" onchange="grid.forceRender()"><span>Gain (&gt;0.5)</span></label>
-                            <label><input type="radio" name="log2Filter" value="Loss" onchange="grid.forceRender()"><span>Loss (&lt;-0.5)</span></label>
-                            <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span>Deep Loss (&lt;-1.0)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Gain" onchange="grid.forceRender()"><span id="lbl-gain-filter">Gain (&gt;0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Loss" onchange="grid.forceRender()"><span id="lbl-loss-filter">Loss (&lt;-0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span id="lbl-deeploss-filter">Deep Loss (&lt;-1.0)</span></label>
+                        </div>
+                    </div>
+                    <div class="threshold-controls">
+                        <div class="threshold-item">
+                            <label for="gain-slider">Gain:</label>
+                            <input type="range" id="gain-slider" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                            <input type="number" id="gain-input" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                        </div>
+                        <div class="threshold-item">
+                            <label for="loss-slider">Loss:</label>
+                            <input type="range" id="loss-slider" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                            <input type="number" id="loss-input" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                        </div>
+                        <div class="threshold-item">
+                            <label for="deeploss-slider">Deep Loss:</label>
+                            <input type="range" id="deeploss-slider" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
+                            <input type="number" id="deeploss-input" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
                         </div>
                     </div>
                 </div>
@@ -495,6 +517,10 @@
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
+    const gainThreshold = options.gainThreshold ?? 0.5;
+    const lossThreshold = options.lossThreshold ?? -0.5;
+    const deepLossThreshold = options.deepLossThreshold ?? -1.0;
+
     layers.push({
         data: { name: "min_logratio" },
         mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
@@ -507,7 +533,32 @@
         }
     });
 
-    const logratio_data_encoding = function(data_name) {
+    layers.push({
+        data: { name: "gain_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#D73027" }
+        }
+    });
+    layers.push({
+        data: { name: "loss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#4575B4" }
+        }
+    });
+    layers.push({
+        data: { name: "deeploss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: {
+            y: { field: "_val", type: "quantitative" },
+            color: { value: "#1A237E" }
+        }
+    });
+
+    const logratio_data_encoding = function(data_name, extraTooltip = []) {
         return {
             data: { name: data_name },
             transform: clampOutliers,
@@ -517,7 +568,12 @@
                 y: yEncoding,
                 color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
                 stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
-                tooltip: [{ field: "contig", type: "nominal", title: "Chromosome" }, { field: "start", type: "quantitative", title: "Position" }, { field: "value", type: "quantitative", title: "Log2", format: ".3f" }, { field: "gene", type: "nominal", title: "Gene" }, { field: "exon", type: "nominal", title: "Exon/Intron" }, { field: "transcript", type: "nominal", title: "Transcript" }]
+                tooltip: [
+                    { field: "contig", type: "nominal", title: "Chromosome" },
+                    { field: "start", type: "quantitative", title: "Position" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    ...extraTooltip
+                ]
             }
         }
     }
@@ -537,19 +593,18 @@
     }
 
     if (tso500Data) {
-        layers.push(logratio_data_encoding("tso500_logratio"));
+        layers.push(logratio_data_encoding("tso500_logratio", [
+            { field: "gene",  type: "nominal", title: "Gene" },
+            { field: "exon",  type: "nominal", title: "Exon/Intron" },
+            { field: "Tx",    type: "nominal", title: "Transcript" }
+        ]));
     }
 
     if (segments) {
         layers.push({
-            data: { values: segments, format: { type: "json" } },
+            data: { name: "segments_classified" },
             transform: [
-                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
-                {
-                    type: "formula",
-                    expr: "datum.value >= 0.5 ? 'gain' : (datum.value > -0.5 ? 'neutral' : (datum.value <= -1 ? 'deeploss' : 'loss'))",
-                    as: "cnvStatus"
-                }
+                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" }
             ],
             // mark: { type: "rule", clip: true, size: 3, opacity: 0.8 },
             encoding: {
@@ -559,10 +614,11 @@
                 stroke: cnvStatus_encoding,
                 color: cnvStatus_encoding,
                 tooltip: [
-                    { field: "contig", type: "nominal", title: "Chromosome" },
-                    { field: "start", type: "quantitative", title: "Start Position" },
-                    { field: "end", type: "quantitative", title: "End Position" },
-                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" }
+                    { field: "contig",    type: "nominal",     title: "Chromosome" },
+                    { field: "start",     type: "quantitative", title: "Start Position" },
+                    { field: "end",       type: "quantitative", title: "End Position" },
+                    { field: "value",     type: "quantitative", title: "Log2",      format: ".3f" },
+                    { field: "cnvStatus", type: "nominal",     title: "Status" }
                 ]
             },
             stops: [10000],
@@ -29638,6 +29694,60 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
          let embedResult = null;
          let genomeScale = null;
 
+         let thresholds = {
+             gain: 0.5,
+             loss: -0.5,
+             deeploss: -1.0
+         };
+
+         function classifySegments() {
+             if (!segments) return [];
+             return segments.map(s => ({
+                 ...s,
+                 cnvStatus: s.value >= thresholds.gain ? 'gain'
+                          : s.value <= thresholds.deeploss ? 'deeploss'
+                          : s.value <= thresholds.loss ? 'loss'
+                          : 'neutral'
+             }));
+         }
+
+         function onThresholdChange(type, val) {
+             let num = parseFloat(val);
+             if (isNaN(num)) return;
+
+             if (type === 'gain') {
+                 num = Math.min(Math.max(num, 0.1), 2.0);
+                 thresholds.gain = num;
+                 document.getElementById('gain-slider').value = num;
+                 document.getElementById('gain-input').value = num;
+             } else if (type === 'loss') {
+                 num = Math.min(Math.max(num, -2.0), -0.1);
+                 thresholds.loss = num;
+                 document.getElementById('loss-slider').value = num;
+                 document.getElementById('loss-input').value = num;
+             } else if (type === 'deeploss') {
+                 num = Math.min(Math.max(num, -5.0), -0.6);
+                 thresholds.deeploss = num;
+                 document.getElementById('deeploss-slider').value = num;
+                 document.getElementById('deeploss-input').value = num;
+             }
+
+             const gainLbl = document.getElementById("lbl-gain-filter");
+             if (gainLbl) gainLbl.innerText = `Gain (>${thresholds.gain.toFixed(2)})`;
+             const lossLbl = document.getElementById("lbl-loss-filter");
+             if (lossLbl) lossLbl.innerText = `Loss (<${thresholds.loss.toFixed(2)})`;
+             const deepLossLbl = document.getElementById("lbl-deeploss-filter");
+             if (deepLossLbl) deepLossLbl.innerText = `Deep Loss (<${thresholds.deeploss.toFixed(2)})`;
+
+             if (grid) grid.forceRender();
+             if (embedResult) {
+                 embedResult.updateNamedData("gain_threshold",       [{ _val: thresholds.gain }]);
+                 embedResult.updateNamedData("loss_threshold",       [{ _val: thresholds.loss }]);
+                 embedResult.updateNamedData("deeploss_threshold",   [{ _val: thresholds.deeploss }]);
+                 embedResult.updateNamedData("segments_classified",  classifySegments());
+             }
+         }
+
          function getSpec() {
              return {
                  "assembly": "hg19",
@@ -29647,7 +29757,11 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
                  },
                  "vconcat": [
                      ideogramTrack(cytobandData),
-                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData),
+                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
+                         gainThreshold: thresholds.gain,
+                         lossThreshold: thresholds.loss,
+                         deepLossThreshold: thresholds.deeploss
+                     }),
                      geneAnnotationTrack(refseqGenes),
                      bAlleleFrequencyTrack(hrd_baf, tso500_baf, cytobandData)
                  ]
@@ -29682,6 +29796,10 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
                  if (name === "hrd_baf") return hrd_baf ?? [];
                  if (name === "tso500_baf") return tso500_baf ?? [];
                  if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
+                 if (name === "gain_threshold") return [{ _val: thresholds.gain }];
+                 if (name === "loss_threshold") return [{ _val: thresholds.loss }];
+                 if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
+                 if (name === "segments_classified") return classifySegments();
              };
              genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
                  embedResult = res;
@@ -29759,13 +29877,13 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
                  let symbol = '';
                  let cls = '';
 
-                 if (log_fl >= 0.5) {
+                 if (log_fl >= thresholds.gain) {
                      symbol = '🡱';
                      cls = 'gain';
-                 } else if (log_fl <= -1) {
+                 } else if (log_fl <= thresholds.deeploss) {
                      symbol = '🡳🡳';
                      cls = 'deeploss';
-                 } else if (log_fl <= -0.5) {
+                 } else if (log_fl <= thresholds.loss) {
                      symbol = '🡳';
                      cls = 'loss';
                  }
@@ -29840,13 +29958,13 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
                          dt = dt.filter(d => getPrio(d.gene) < 3);
                      }
                      if (filter === "Gain") {
-                         dt = dt.filter(d => d.log2 > 0.5);
+                         dt = dt.filter(d => d.log2 >= thresholds.gain);
                      } else if (filter === "Loss") {
-                         dt = dt.filter(d => d.log2 < -0.5 && d.log2 >= -1.0);
+                         dt = dt.filter(d => d.log2 <= thresholds.loss && d.log2 > thresholds.deeploss);
                      } else if (filter === "Deep Loss") {
-                         dt = dt.filter(d => d.log2 < -1.0);
+                         dt = dt.filter(d => d.log2 <= thresholds.deeploss);
                      } else if (filter === "All Amplification and Loss") {
-                         dt = dt.filter(d => d.log2 > 0.5 || d.log2 < -0.5);
+                         dt = dt.filter(d => d.log2 >= thresholds.gain || d.log2 <= thresholds.loss);
                      }
                      return dt.map(r => [r.chr, r.gene, r.log2, r.start, r.end]);
                  },
