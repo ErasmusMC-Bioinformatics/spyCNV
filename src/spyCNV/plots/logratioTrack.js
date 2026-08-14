@@ -28,10 +28,6 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
-    const gainThreshold = options.gainThreshold ?? 0.5;
-    const lossThreshold = options.lossThreshold ?? -0.5;
-    const deepLossThreshold = options.deepLossThreshold ?? -1.0;
-
     layers.push({
         data: { name: "min_logratio" },
         mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
@@ -80,8 +76,6 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                 color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
                 stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
                 tooltip: [
-                    { field: "contig", type: "nominal", title: "Chromosome" },
-                    { field: "start", type: "quantitative", title: "Position" },
                     { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
                     ...extraTooltip
                 ]
@@ -105,9 +99,9 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
 
     if (tso500Data) {
         layers.push(logratio_data_encoding("tso500_logratio", [
-            { field: "gene",  type: "nominal", title: "Gene" },
-            { field: "exon",  type: "nominal", title: "Exon/Intron" },
-            { field: "Tx",    type: "nominal", title: "Transcript" }
+            { field: "gene", type: "nominal", title: "Gene" },
+            { field: "exon", type: "nominal", title: "Exon/Intron" },
+            { field: "Tx", type: "nominal", title: "Transcript" }
         ]));
     }
 
@@ -125,11 +119,9 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
                 stroke: cnvStatus_encoding,
                 color: cnvStatus_encoding,
                 tooltip: [
-                    { field: "contig",    type: "nominal",     title: "Chromosome" },
-                    { field: "start",     type: "quantitative", title: "Start Position" },
-                    { field: "end",       type: "quantitative", title: "End Position" },
-                    { field: "value",     type: "quantitative", title: "Log2",      format: ".3f" },
-                    { field: "cnvStatus", type: "nominal",     title: "Status" }
+                    { field: "name", type: "nominal", title: "Gene" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    { field: "cnvStatus", type: "nominal", title: "Status" }
                 ]
             },
             stops: [10000],
