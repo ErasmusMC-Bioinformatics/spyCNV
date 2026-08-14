@@ -517,10 +517,6 @@
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
-    const gainThreshold = options.gainThreshold ?? 0.5;
-    const lossThreshold = options.lossThreshold ?? -0.5;
-    const deepLossThreshold = options.deepLossThreshold ?? -1.0;
-
     layers.push({
         data: { name: "min_logratio" },
         mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
@@ -569,8 +565,6 @@
                 color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
                 stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
                 tooltip: [
-                    { field: "contig", type: "nominal", title: "Chromosome" },
-                    { field: "start", type: "quantitative", title: "Position" },
                     { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
                     ...extraTooltip
                 ]
@@ -594,9 +588,9 @@
 
     if (tso500Data) {
         layers.push(logratio_data_encoding("tso500_logratio", [
-            { field: "gene",  type: "nominal", title: "Gene" },
-            { field: "exon",  type: "nominal", title: "Exon/Intron" },
-            { field: "Tx",    type: "nominal", title: "Transcript" }
+            { field: "gene", type: "nominal", title: "Gene" },
+            { field: "exon", type: "nominal", title: "Exon/Intron" },
+            { field: "Tx", type: "nominal", title: "Transcript" }
         ]));
     }
 
@@ -614,11 +608,9 @@
                 stroke: cnvStatus_encoding,
                 color: cnvStatus_encoding,
                 tooltip: [
-                    { field: "contig",    type: "nominal",     title: "Chromosome" },
-                    { field: "start",     type: "quantitative", title: "Start Position" },
-                    { field: "end",       type: "quantitative", title: "End Position" },
-                    { field: "value",     type: "quantitative", title: "Log2",      format: ".3f" },
-                    { field: "cnvStatus", type: "nominal",     title: "Status" }
+                    { field: "name", type: "nominal", title: "Gene" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    { field: "cnvStatus", type: "nominal", title: "Status" }
                 ]
             },
             stops: [10000],
@@ -29980,8 +29972,8 @@ SCO2	chr22	50961996	2872	-	76	0,857,1017,164,395,145,100,194
                  
                  if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 3000000) },
-                         { chrom: chr, pos: end + 3000000 }
+                         { chrom: chr, pos: Math.max(0, start - 15000000) },
+                         { chrom: chr, pos: end + 15000000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                  }
