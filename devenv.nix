@@ -34,6 +34,18 @@
         entr
       ];
     };
+    dev-html = {
+      description = "generate an output file on src file change";
+      exec = ''
+        fd -tf | entr -c spy generate --sample-id SXX-XXXT \
+          --vcf tests/data/SXX-XXXT.hard-filtered.vcf.gz \
+          --tn tests/data/SXX-XXXT.tn.tsv.gz \
+          --ballele tests/data/SXX-XXXT_bAllele.tsv \
+          --logratio tests/data/SXX-XXXT_logRatio.tsv \
+          --segments tests/data/SXX-XXXT.seg.called.merged \
+          --output-dir /tmp/
+      '';
+    };
     gh-pages = {
       description = "generate html from sample data for github pages";
       exec = ''
