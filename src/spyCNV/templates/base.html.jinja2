@@ -7,13 +7,28 @@
          body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; }
          #header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
          h1 { margin: 0; font-size: 1.5rem; }
+         h3 { margin: 4px; }
          .controls { display: flex; gap: 15px; align-items: center; }
          #content { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 50px); }
          #visualization-container { flex: 3; overflow-y: auto; position: relative; }
          #visualization { width: 100%; height: 100%; }
          #table-container { flex: 1; padding: 15px; background: #ffffff; border-left: 1px solid #ddd; display: flex; flex-direction: column; overflow: hidden; }
-         #table-controls { margin-bottom: 10px; display: flex; gap: 10px; }
-         #filter-select { padding: 5px; flex: 1; }
+         #table-controls { margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef; }
+         .control-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+         .segmented-control { display: inline-flex; flex-wrap: wrap; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px #ced4da; background-color: #ffffff; }
+         .segmented-control label { display: inline-flex; margin: 0; padding: 0; cursor: pointer; user-select: none; }
+         .segmented-control input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+         .segmented-control span { display: inline-block; padding: 5px 10px; font-size: 0.8rem; font-weight: 500; color: #495057; background-color: #ffffff; border-right: 1px solid #ced4da; transition: background-color 0.15s ease, color 0.15s ease; }
+         .segmented-control label:last-child span { border-right: none; }
+         .segmented-control label:hover span { background-color: #f1f3f5; color: #212529; }
+         .segmented-control input[type="radio"]:checked + span { background-color: #4575B4; color: #ffffff; }
+         .toggle-container { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; user-select: none; }
+         .toggle-switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+         .toggle-switch input { opacity: 0; width: 0; height: 0; }
+         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .2s; border-radius: 18px; }
+         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .2s; border-radius: 50%; }
+         input:checked + .slider { background-color: #4575B4; }
+         input:checked + .slider:before { transform: translateX(16px); }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 
          .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
@@ -27,9 +42,14 @@
          .gene-prio2 { color: #A55AF4; font-weight: 500; }
          .gain { color: #D73027; font-weight: 300; }
          .loss { color: #4575B4; font-weight: 300; }
-         .deeploss { color: #1A237E; font-weight: 300; }
+         .deeploss { color: #313695; font-weight: 300; }
          .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
 
+         .threshold-controls { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 8px; border-top: 1px solid #e9ecef; }
+         .threshold-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: #495057; }
+         .threshold-item label { width: 75px; flex-shrink: 0; }
+         .threshold-item input[type="range"] { flex: 1; height: 4px; border-radius: 2px; accent-color: #4575B4; cursor: pointer; }
+         .threshold-item input[type="number"] { width: 55px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #ced4da; border-radius: 4px; text-align: right; }
         </style>
         <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
         <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -40,9 +60,11 @@
             <div class="controls">
                 {% if data.hrd_baf and data.tso500_baf %}
                 <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
-                <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)">All</label>
-                <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)">TSO500</label>
-                <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)">HRD</label>
+                <div class="segmented-control">
+                    <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)"><span>All</span></label>
+                    <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)"><span>TSO500</span></label>
+                    <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)"><span>HRD</span></label>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -53,16 +75,45 @@
             </div>
             
             <div id="table-container">
-                <h3>Gene Log2 Data</h3>
+                <h3>Settings</h3>
                 <div id="table-controls">
-                    <select id="filter-select" onchange="grid.forceRender()">
-                        <option value="All">All</option>
-                        <option value="All Amplification and Loss">All Amplification and Loss</option>
-                        <option value="Gain">Gain (Log2 > 0.5)</option>
-                        <option value="Loss">Loss (Log2 < -0.5)</option>
-                        <option value="Deep Loss">Deep Loss (Log2 < -1.0)</option>
-                    </select>
+                    <div class="control-group">
+                        <label class="toggle-container">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="prio-toggle" onchange="grid.forceRender()">
+                                <span class="slider"></span>
+                            </span>
+                            <span>Key Cancer Genes Only</span>
+                        </label>
+                    </div>
+                    <div class="control-group">
+                        <div class="segmented-control">
+                            <label><input type="radio" name="log2Filter" value="All" checked onchange="grid.forceRender()"><span>All</span></label>
+                            <label><input type="radio" name="log2Filter" value="All Amplification and Loss" onchange="grid.forceRender()"><span>All Amp &amp; Loss</span></label>
+                            <label><input type="radio" name="log2Filter" value="Gain" onchange="grid.forceRender()"><span id="lbl-gain-filter">Gain (&gt;0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Loss" onchange="grid.forceRender()"><span id="lbl-loss-filter">Loss (&lt;-0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span id="lbl-deeploss-filter">Deep Loss (&lt;-1.0)</span></label>
+                        </div>
+                    </div>
+                    <div class="threshold-controls">
+                        <div class="threshold-item">
+                            <label for="gain-slider">Gain:</label>
+                            <input type="range" id="gain-slider" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                            <input type="number" id="gain-input" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                        </div>
+                        <div class="threshold-item">
+                            <label for="loss-slider">Loss:</label>
+                            <input type="range" id="loss-slider" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                            <input type="number" id="loss-input" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                        </div>
+                        <div class="threshold-item">
+                            <label for="deeploss-slider">Deep Loss:</label>
+                            <input type="range" id="deeploss-slider" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
+                            <input type="number" id="deeploss-input" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
+                        </div>
+                    </div>
                 </div>
+                <h3>Gene Log2 Data</h3>
                 <div id="gene-table-wrapper"></div>
             </div>
         </div>
@@ -87,13 +138,74 @@
          let embedResult = null;
          let genomeScale = null;
 
+         let thresholds = {
+             gain: 0.5,
+             loss: -0.5,
+             deeploss: -1.0
+         };
+
+         function classifySegments() {
+             if (!segments) return [];
+             return segments.map(s => ({
+                 ...s,
+                 cnvStatus: s.value >= thresholds.gain ? 'gain'
+                          : s.value <= thresholds.deeploss ? 'deeploss'
+                          : s.value <= thresholds.loss ? 'loss'
+                          : 'neutral'
+             }));
+         }
+
+         function onThresholdChange(type, val) {
+             let num = parseFloat(val);
+             if (isNaN(num)) return;
+
+             if (type === 'gain') {
+                 num = Math.min(Math.max(num, 0.1), 2.0);
+                 thresholds.gain = num;
+                 document.getElementById('gain-slider').value = num;
+                 document.getElementById('gain-input').value = num;
+             } else if (type === 'loss') {
+                 num = Math.min(Math.max(num, -2.0), -0.1);
+                 thresholds.loss = num;
+                 document.getElementById('loss-slider').value = num;
+                 document.getElementById('loss-input').value = num;
+             } else if (type === 'deeploss') {
+                 num = Math.min(Math.max(num, -5.0), -0.6);
+                 thresholds.deeploss = num;
+                 document.getElementById('deeploss-slider').value = num;
+                 document.getElementById('deeploss-input').value = num;
+             }
+
+             const gainLbl = document.getElementById("lbl-gain-filter");
+             if (gainLbl) gainLbl.innerText = `Gain (>${thresholds.gain.toFixed(2)})`;
+             const lossLbl = document.getElementById("lbl-loss-filter");
+             if (lossLbl) lossLbl.innerText = `Loss (<${thresholds.loss.toFixed(2)})`;
+             const deepLossLbl = document.getElementById("lbl-deeploss-filter");
+             if (deepLossLbl) deepLossLbl.innerText = `Deep Loss (<${thresholds.deeploss.toFixed(2)})`;
+
+             if (grid) grid.forceRender();
+             if (embedResult) {
+                 embedResult.updateNamedData("gain_threshold",       [{ _val: thresholds.gain }]);
+                 embedResult.updateNamedData("loss_threshold",       [{ _val: thresholds.loss }]);
+                 embedResult.updateNamedData("deeploss_threshold",   [{ _val: thresholds.deeploss }]);
+                 embedResult.updateNamedData("segments_classified",  classifySegments());
+             }
+         }
+
          function getSpec() {
              return {
                  "assembly": "hg19",
                  "params": [{ "name": "brush" }],
+                 "config": {
+                     "legend": { "disable": true }
+                 },
                  "vconcat": [
                      ideogramTrack(cytobandData),
-                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData),
+                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
+                         gainThreshold: thresholds.gain,
+                         lossThreshold: thresholds.loss,
+                         deepLossThreshold: thresholds.deeploss
+                     }),
                      geneAnnotationTrack(refseqGenes),
                      bAlleleFrequencyTrack(hrd_baf, tso500_baf, cytobandData)
                  ]
@@ -128,6 +240,10 @@
                  if (name === "hrd_baf") return hrd_baf ?? [];
                  if (name === "tso500_baf") return tso500_baf ?? [];
                  if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
+                 if (name === "gain_threshold") return [{ _val: thresholds.gain }];
+                 if (name === "loss_threshold") return [{ _val: thresholds.loss }];
+                 if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
+                 if (name === "segments_classified") return classifySegments();
              };
              genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
                  embedResult = res;
@@ -205,13 +321,13 @@
                  let symbol = '';
                  let cls = '';
 
-                 if (log_fl >= 0.5) {
+                 if (log_fl >= thresholds.gain) {
                      symbol = '🡱';
                      cls = 'gain';
-                 } else if (log_fl <= -1) {
+                 } else if (log_fl <= thresholds.deeploss) {
                      symbol = '🡳🡳';
                      cls = 'deeploss';
-                 } else if (log_fl <= -0.5) {
+                 } else if (log_fl <= thresholds.loss) {
                      symbol = '🡳';
                      cls = 'loss';
                  }
@@ -268,6 +384,7 @@
                      },
                      {
                          name: 'Log2(FC)',
+                         sort: true,
                          formatter: (log) => {
                              const log_str = annotateCNVstatus(log);
                              return gridjs.html(log_str);
@@ -275,18 +392,23 @@
                      }, 'Start', { name: '_idx', hidden: true }
                  ],
                  data: () => {
-                     const filter = document.getElementById("filter-select").value;
+                     const filterRadio = document.querySelector('input[name="log2Filter"]:checked');
+                     const filter = filterRadio ? filterRadio.value : 'All';
+                     const prioOnly = document.getElementById("prio-toggle") ? document.getElementById("prio-toggle").checked : false;
                      let dt = tableData;
-                     if (filter === "Gain") {
-                         dt = dt.filter(d => d.log2 > 0.5);
-                     } else if (filter === "Loss") {
-                         dt = dt.filter(d => d.log2 < -0.5 && d.log2 >= -1.0);
-                     } else if (filter === "Deep Loss") {
-                         dt = dt.filter(d => d.log2 < -1.0);
-                     } else if (filter === "All Amplification and Loss") {
-                         dt = dt.filter(d => d.log2 > 0.5 || d.log2 < -0.5);
+                     if (prioOnly) {
+                         dt = dt.filter(d => getPrio(d.gene) < 3);
                      }
-                     return dt.map(r => [r.chr, r.gene, r.log2.toFixed(3), r.start, r.end]);
+                     if (filter === "Gain") {
+                         dt = dt.filter(d => d.log2 >= thresholds.gain);
+                     } else if (filter === "Loss") {
+                         dt = dt.filter(d => d.log2 <= thresholds.loss && d.log2 > thresholds.deeploss);
+                     } else if (filter === "Deep Loss") {
+                         dt = dt.filter(d => d.log2 <= thresholds.deeploss);
+                     } else if (filter === "All Amplification and Loss") {
+                         dt = dt.filter(d => d.log2 >= thresholds.gain || d.log2 <= thresholds.loss);
+                     }
+                     return dt.map(r => [r.chr, r.gene, r.log2, r.start, r.end]);
                  },
                  search: true,
                  sort: true,
