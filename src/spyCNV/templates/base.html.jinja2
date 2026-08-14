@@ -384,9 +384,7 @@
                      },
                      {
                          name: 'Log2(FC)',
-                         sort: {
-                             compare: (a, b) => Number(a) - Number(b)
-                         },
+                         sort: true,
                          formatter: (log) => {
                              const log_str = annotateCNVstatus(log);
                              return gridjs.html(log_str);
