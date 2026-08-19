@@ -58,14 +58,17 @@
         <div id="header">
             <h1>{{ sample_id }}</h1>
             <div class="controls">
-                {% if data.hrd_baf and data.tso500_baf %}
                 <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
                 <div class="segmented-control">
                     <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)"><span>All</span></label>
+                    {% if data.tso500_baf or data.tso500_logratio %}
                     <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)"><span>TSO500</span></label>
+                    {% endif %}
+                    {% if data.hrd_baf or data.hrd_logratio %}
                     <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)"><span>HRD</span></label>
+                    {% endif %}
+                    <label><input type="radio" name="displayMode" value="bin" onchange="updateDisplayMode(this.value)"><span>Bin</span></label>
                 </div>
-                {% endif %}
             </div>
         </div>
         
@@ -95,23 +98,23 @@
                             <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span id="lbl-deeploss-filter">Deep Loss (&lt;-1.0)</span></label>
                         </div>
                     </div>
-                    <div class="threshold-controls">
-                        <div class="threshold-item">
-                            <label for="gain-slider">Gain:</label>
-                            <input type="range" id="gain-slider" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
-                            <input type="number" id="gain-input" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
-                        </div>
-                        <div class="threshold-item">
-                            <label for="loss-slider">Loss:</label>
-                            <input type="range" id="loss-slider" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
-                            <input type="number" id="loss-input" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
-                        </div>
-                        <div class="threshold-item">
-                            <label for="deeploss-slider">Deep Loss:</label>
-                            <input type="range" id="deeploss-slider" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
-                            <input type="number" id="deeploss-input" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
-                        </div>
-                    </div>
+                    <!-- <div class="threshold-controls">
+                         <div class="threshold-item">
+                         <label for="gain-slider">Gain:</label>
+                         <input type="range" id="gain-slider" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                         <input type="number" id="gain-input" min="0.1" max="1.0" step="0.05" value="0.5" oninput="onThresholdChange('gain', this.value)">
+                         </div>
+                         <div class="threshold-item">
+                         <label for="loss-slider">Loss:</label>
+                         <input type="range" id="loss-slider" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                         <input type="number" id="loss-input" min="-1.0" max="-0.1" step="0.05" value="-0.5" oninput="onThresholdChange('loss', this.value)">
+                         </div>
+                         <div class="threshold-item">
+                         <label for="deeploss-slider">Deep Loss:</label>
+                         <input type="range" id="deeploss-slider" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
+                         <input type="number" id="deeploss-input" min="-2.0" max="-0.6" step="0.05" value="-1.0" oninput="onThresholdChange('deeploss', this.value)">
+                         </div>
+                         </div> -->
                 </div>
                 <h3>Gene Log2 Data</h3>
                 <div id="gene-table-wrapper"></div>
@@ -137,12 +140,133 @@
          
          let embedResult = null;
          let genomeScale = null;
+         let binScale = null;
+         let currentDisplayMode = "both";
 
          let thresholds = {
              gain: 0.5,
              loss: -0.5,
              deeploss: -1.0
          };
+
+         function chrOrder(chr) {
+             const val = String(chr).replace('chr', '').trim();
+             if (!isNaN(val)) return parseInt(val);
+             if (val === 'X' || val === 'x') return 23;
+             if (val === 'Y' || val === 'y') return 24;
+             if (val === 'M' || val === 'm' || val === 'MT' || val === 'mt') return 25;
+             return 99;
+         }
+
+         function prepareCombinedBinData(tso500_records, hrd_records) {
+             const allRecords = [];
+             if (tso500_records) {
+                 for (const r of tso500_records) {
+                     allRecords.push({ ...r, _source: 'tso500' });
+                 }
+             }
+             if (hrd_records) {
+                 for (const r of hrd_records) {
+                     allRecords.push({ ...r, _source: 'hrd' });
+                 }
+             }
+
+             if (!allRecords.length) {
+                 return {
+                     tso500Data: [],
+                     hrdData: [],
+                     allData: [],
+                     chromBoundaries: [],
+                     chromRegions: [],
+                     chromLabels: []
+                 };
+             }
+
+             const formatted = allRecords.map(d => {
+                 const val = d.value !== undefined ? d.value : d.log2;
+                 const chr = String(d.contig || d.chromosome || d.Chr || '').replace('chr', '');
+                 const gene = d.gene ? d.gene.split('_')[0] : (d.name || '');
+                 return {
+                     Chr: `chr${chr}`,
+                     contig: chr,
+                     start: d.start,
+                     end: d.end || d.start,
+                     gene: gene,
+                     exon: d.exon || '',
+                     Tx: d.Tx || '',
+                     value: val,
+                     _source: d._source
+                 };
+             });
+
+             // Sort ALL records together by genomic position (chromosome order, then start position)
+             formatted.sort((a, b) => {
+                 const numA = chrOrder(a.contig);
+                 const numB = chrOrder(b.contig);
+                 if (numA !== numB) return numA - numB;
+                 return (a.start || 0) - (b.start || 0);
+             });
+
+             // Assign sequential bin index based on genomic order
+             const allData = formatted.map((d, i) => ({ ...d, _binIndex: i }));
+
+             const chromBoundaries = [];
+             const chromRegions = [];
+             const chromLabels = [];
+             let lastChrom = null;
+             let chromStart = 0;
+
+             allData.forEach((d, i) => {
+                 if (d.contig !== lastChrom) {
+                     if (lastChrom !== null) {
+                         chromBoundaries.push({ boundary: i, chrom: lastChrom });
+                         const midpoint = (chromStart + i - 1) / 2;
+                         chromRegions.push({
+                             start: chromStart,
+                             end: i - 1,
+                             chrom: lastChrom,
+                             midpoint: midpoint,
+                             isEven: chromRegions.length % 2 === 0 ? "even" : "odd"
+                         });
+                         chromLabels.push({
+                             position: midpoint,
+                             label: lastChrom
+                         });
+                         chromStart = i;
+                     }
+                     lastChrom = d.contig;
+                 }
+             });
+
+             if (lastChrom !== null && allData.length > 0) {
+                 const midpoint = (chromStart + allData.length - 1) / 2;
+                 chromRegions.push({
+                     start: chromStart,
+                     end: allData.length - 1,
+                     chrom: lastChrom,
+                     midpoint: midpoint,
+                     isEven: chromRegions.length % 2 === 0 ? "even" : "odd"
+                 });
+                 chromLabels.push({
+                     position: midpoint,
+                     label: lastChrom
+                 });
+             }
+
+             const tso500Data = allData.filter(d => d._source === 'tso500');
+             const hrdData = allData.filter(d => d._source === 'hrd');
+
+             return {
+                 tso500Data,
+                 hrdData,
+                 allData,
+                 chromBoundaries,
+                 chromRegions,
+                 chromLabels
+             };
+         }
+
+         const combinedBinData = prepareCombinedBinData(tso500_logratio, hrd_logratio);
 
          function classifySegments() {
              if (!segments) return [];
@@ -153,6 +277,29 @@
                           : s.value <= thresholds.loss ? 'loss'
                           : 'neutral'
              }));
+         }
+
+         function classifyBinSegments() {
+             if (!segments) return [];
+             const baseData = combinedBinData.allData;
+             if (!baseData || !baseData.length) return [];
+
+             const classified = classifySegments();
+             const result = [];
+             for (const seg of classified) {
+                 const segChr = String(seg.contig).replace('chr', '');
+                 const matching = baseData.filter(r => r.contig === segChr && r.start >= seg.start && r.start <= seg.end);
+                 if (matching.length > 0) {
+                     const startBin = matching[0]._binIndex;
+                     const endBin = matching[matching.length - 1]._binIndex;
+                     result.push({
+                         ...seg,
+                         startBin,
+                         endBin
+                     });
+                 }
+             }
+             return result;
          }
 
          function onThresholdChange(type, val) {
@@ -185,10 +332,11 @@
 
              if (grid) grid.forceRender();
              if (embedResult) {
-                 embedResult.updateNamedData("gain_threshold",       [{ _val: thresholds.gain }]);
-                 embedResult.updateNamedData("loss_threshold",       [{ _val: thresholds.loss }]);
-                 embedResult.updateNamedData("deeploss_threshold",   [{ _val: thresholds.deeploss }]);
-                 embedResult.updateNamedData("segments_classified",  classifySegments());
+                 embedResult.updateNamedData("gain_threshold",          [{ _val: thresholds.gain }]);
+                 embedResult.updateNamedData("loss_threshold",          [{ _val: thresholds.loss }]);
+                 embedResult.updateNamedData("deeploss_threshold",      [{ _val: thresholds.deeploss }]);
+                 embedResult.updateNamedData("segments_classified",     classifySegments());
+                 embedResult.updateNamedData("segments_classified_bin", classifyBinSegments());
              }
          }
 
@@ -212,14 +360,38 @@
              };
          }
 
+         function getBinSpec() {
+             return {
+                 "config": {
+                     "legend": { "disable": true }
+                 },
+                 "vconcat": [
+                     logratioBinTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
+                         height: 300,
+                         gainThreshold: thresholds.gain,
+                         lossThreshold: thresholds.loss,
+                         deepLossThreshold: thresholds.deeploss
+                     })
+                 ]
+             };
+         }
+
          function showMinLogratio(showHrd, showTso500) {
-             const min_hrd_log = Math.min(...hrd_logratio.map(r => r.value));
-             const min_tso_log = Math.min(...tso500_logratio.map(r => r.value));
-             const min_logratio_value = min_logratio[0]._value
+             const min_hrd_log = hrd_logratio ? Math.min(...hrd_logratio.map(r => r.value)) : 0;
+             const min_tso_log = tso500_logratio ? Math.min(...tso500_logratio.map(r => r.value)) : 0;
+             const min_logratio_value = min_logratio[0]._value;
              return (showHrd && min_hrd_log <= min_logratio_value) || (showTso500 && min_tso_log <= min_logratio_value);
          }
 
          function updateDisplayMode(value) {
+             const prevMode = currentDisplayMode;
+             currentDisplayMode = value;
+
+             if (value === 'bin' || prevMode === 'bin') {
+                 renderPlot();
+                 return;
+             }
+
              if (!embedResult) return;
              const showHrd    = (value === 'both' || value === 'hrd');
              const showTso500 = (value === 'both' || value === 'tso500');
@@ -234,20 +406,45 @@
          function renderPlot() {
              const container = document.getElementById("visualization");
              container.innerHTML = "";
+             const isBin = (currentDisplayMode === "bin");
+
              const namedDataProvider = (name) => {
-                 if (name === "hrd_logratio") return hrd_logratio ?? [];
-                 if (name === "tso500_logratio") return tso500_logratio ?? [];
-                 if (name === "hrd_baf") return hrd_baf ?? [];
-                 if (name === "tso500_baf") return tso500_baf ?? [];
-                 if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
-                 if (name === "gain_threshold") return [{ _val: thresholds.gain }];
-                 if (name === "loss_threshold") return [{ _val: thresholds.loss }];
-                 if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
-                 if (name === "segments_classified") return classifySegments();
+                 if (isBin) {
+                     if (name === "tso500_logratio_bin") return combinedBinData.tso500Data;
+                     if (name === "hrd_logratio_bin") return combinedBinData.hrdData;
+                     if (name === "chrom_regions") return combinedBinData.chromRegions;
+                     if (name === "chrom_boundaries") return combinedBinData.chromBoundaries;
+                     if (name === "chrom_labels") return combinedBinData.chromLabels;
+                     if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
+                     if (name === "gain_threshold") return [{ _val: thresholds.gain }];
+                     if (name === "loss_threshold") return [{ _val: thresholds.loss }];
+                     if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
+                     if (name === "segments_classified_bin") return classifyBinSegments();
+                 } else {
+                     const showHrd = (currentDisplayMode === 'both' || currentDisplayMode === 'hrd');
+                     const showTso500 = (currentDisplayMode === 'both' || currentDisplayMode === 'tso500');
+                     if (name === "hrd_logratio") return showHrd ? (hrd_logratio ?? []) : [];
+                     if (name === "tso500_logratio") return showTso500 ? (tso500_logratio ?? []) : [];
+                     if (name === "hrd_baf") return showHrd ? (hrd_baf ?? []) : [];
+                     if (name === "tso500_baf") return showTso500 ? (tso500_baf ?? []) : [];
+                     if (name === "min_logratio") return showMinLogratio(showHrd, showTso500) ? min_logratio : [];
+                     if (name === "gain_threshold") return [{ _val: thresholds.gain }];
+                     if (name === "loss_threshold") return [{ _val: thresholds.loss }];
+                     if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
+                     if (name === "segments_classified") return classifySegments();
+                 }
              };
-             genomeSpyEmbed.embed(container, getSpec(), { namedDataProvider }).then(res => {
+
+             const spec = isBin ? getBinSpec() : getSpec();
+             genomeSpyEmbed.embed(container, spec, { namedDataProvider }).then(res => {
                  embedResult = res;
-                 genomeScale = res.getScaleResolutionByName("genomeScale");
+                 if (isBin) {
+                     binScale = res.getScaleResolutionByName("binScale");
+                     genomeScale = null;
+                 } else {
+                     genomeScale = res.getScaleResolutionByName("genomeScale");
+                     binScale = null;
+                 }
              });
          }
          renderPlot();
@@ -418,11 +615,29 @@
 
              grid.on('rowClick', (...args) => {
                  const row = args[1];
-                 const chr = "chr" + row.cells[0].data;
+                 const rawChr = row.cells[0].data;
+                 const chr = "chr" + rawChr;
+                 const cleanChr = String(rawChr).replace('chr', '');
+                 const gene = row.cells[1].data;
                  const start = parseInt(row.cells[3].data);
                  const end = parseInt(row.cells[4].data);
                  
-                 if (genomeScale) {
+                 if (currentDisplayMode === 'bin') {
+                     const geneBins = combinedBinData.allData.filter(r => r.gene === gene || (r.contig === cleanChr && r.start >= start && r.start <= end));
+                     if (geneBins.length > 0) {
+                         const minBin = Math.min(...geneBins.map(b => b._binIndex));
+                         const maxBin = Math.max(...geneBins.map(b => b._binIndex));
+                         const pad = Math.max(15, (maxBin - minBin + 1) * 2);
+                         if (binScale) {
+                             binScale.zoomTo([Math.max(0, minBin - pad), maxBin + pad], true);
+                         }
+                     } else {
+                         const chrRegion = combinedBinData.chromRegions.find(c => c.chrom === cleanChr);
+                         if (chrRegion && binScale) {
+                             binScale.zoomTo([chrRegion.start - 5, chrRegion.end + 5], true);
+                         }
+                     }
+                 } else if (genomeScale) {
                      const zoomDomain = [
                          { chrom: chr, pos: Math.max(0, start - 15000000) },
                          { chrom: chr, pos: end + 15000000 }

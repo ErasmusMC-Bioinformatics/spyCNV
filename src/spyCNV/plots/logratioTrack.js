@@ -1,3 +1,43 @@
+const cnvStatus_encoding = {
+    field: "cnvStatus",
+    type: "nominal",
+    scale: {
+        domain: ["gain", "neutral", "loss", "deeploss"],
+        range: ["#D73027", "#000000", "#4575B4", "#1A237E"]
+    }
+};
+
+const yEncoding = {
+    field: "_clampedValue",
+    type: "quantitative",
+    scale: { zero: false, padding: 0.05 },
+    axis: { grid: true, title: "Log2", tickCount: 5 }
+};
+
+const thresholdLayers = [
+    {
+        data: { name: "min_logratio" },
+        mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
+        encoding: { y: { field: "_value", type: "quantitative" }, color: { value: "#D73027" } }
+    },
+    {
+        data: { name: "gain_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: { y: { field: "_val", type: "quantitative" }, color: { value: "#D73027" } }
+    },
+    {
+        data: { name: "loss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: { y: { field: "_val", type: "quantitative" }, color: { value: "#4575B4" } }
+    },
+    {
+        data: { name: "deeploss_threshold" },
+        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
+        encoding: { y: { field: "_val", type: "quantitative" }, color: { value: "#1A237E" } }
+    }
+];
+
+
 const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}) => {
     let layers = [];
 
@@ -16,54 +56,12 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         }
     };
 
-    const yEncoding = {
-        field: "_clampedValue",
-        type: "quantitative",
-        scale: { zero: false, padding: 0.05 },
-        axis: { grid: true, title: "Log2", tickCount: 5 }
-    };
-
     const clampOutliers = [
         { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
         { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
     ]
 
-    layers.push({
-        data: { name: "min_logratio" },
-        mark: { type: "rule", clip: true, size: 1, opacity: 0.3 },
-        encoding: {
-            y: {
-                field: "_value",
-                type: "quantitative"
-            },
-            color: { value: "#D73027" }
-        }
-    });
-
-    layers.push({
-        data: { name: "gain_threshold" },
-        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
-        encoding: {
-            y: { field: "_val", type: "quantitative" },
-            color: { value: "#D73027" }
-        }
-    });
-    layers.push({
-        data: { name: "loss_threshold" },
-        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
-        encoding: {
-            y: { field: "_val", type: "quantitative" },
-            color: { value: "#4575B4" }
-        }
-    });
-    layers.push({
-        data: { name: "deeploss_threshold" },
-        mark: { type: "rule", clip: true, size: 1, strokeDash: [4, 4], opacity: 0.6 },
-        encoding: {
-            y: { field: "_val", type: "quantitative" },
-            color: { value: "#1A237E" }
-        }
-    });
+    layers.push(...thresholdLayers);
 
     const logratio_data_encoding = function(data_name, extraTooltip = []) {
         return {
@@ -82,16 +80,6 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
             }
         }
     }
-
-    const cnvStatus_encoding = {
-        field: "cnvStatus",
-        type: "nominal",
-        scale: {
-            domain: ["gain", "neutral", "loss", "deeploss"],
-            range: ["#D73027", "#000000", "#4575B4", "#1A237E"]
-        }
-    }
-
 
     if (hrdData) {
         layers.push(logratio_data_encoding("hrd_logratio"));
@@ -180,3 +168,189 @@ const logratioTrack = (hrdData, tso500Data, segments, cytobandData, options = {}
         },
     };
 };
+
+const logratioBinTrack = (hrdData, tso500Data, segments, options = {}) => {
+    let layers = [];
+
+    let clampMin = -2.5;
+
+    const xEncoding = {
+        field: "_binIndex",
+        type: "quantitative",
+        scale: {
+            name: "binScale",
+            zoom: true,
+            nice: false
+        },
+        axis: {
+            title: "Bin index",
+            grid: true,
+            gridColor: "#CCCCCC",
+            gridOpacity: 0.3,
+            gridDash: [1, 11],
+            labels: false,
+            ticks: false
+        }
+    };
+
+    const clampOutliers = [
+        { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" },
+        { type: "formula", expr: `datum.value < ${clampMin} ? 'outlier' : 'typical'`, as: "_outlierStatus" }
+    ];
+
+    layers.push({
+        data: { name: "chrom_regions" },
+        mark: {
+            type: "rect",
+            tooltip: null,
+            opacity: 0.3
+        },
+        encoding: {
+            x: {
+                title: null,
+                field: "start",
+                type: "quantitative",
+                scale: { name: "binScale", zoom: true, nice: false }
+            },
+            x2: {
+                title: null,
+                field: "end"
+            },
+            color: {
+                field: "isEven",
+                type: "nominal",
+                scale: {
+                    domain: ["even", "odd"],
+                    range: ["#ECECEC", "#FFFFFF"]
+                },
+                legend: null
+            }
+        }
+    });
+
+    layers.push(...thresholdLayers);
+
+    const logratio_bin_data_encoding = function(data_name, extraTooltip = []) {
+        return {
+            data: { name: data_name },
+            transform: clampOutliers,
+            mark: {
+                type: "point",
+                clip: true,
+                size: { expr: "min(0.1 * pow(zoomLevel, 2), 120)" },
+                opacity: { expr: "clamp(1 - zoomLevel * 0.1, 0.7, 1)" }
+            },
+            encoding: {
+                x: xEncoding,
+                y: yEncoding,
+                color: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#c3ced8", "red"] }, legend: null },
+                stroke: { field: "_outlierStatus", type: "nominal", scale: { domain: ["typical", "outlier"], range: ["#8696a2", "darkred"] }, legend: null },
+                tooltip: [
+                    { field: "contig", type: "nominal", title: "Chromosome" },
+                    { field: "start", type: "quantitative", title: "Start" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    ...extraTooltip
+                ]
+            }
+        };
+    };
+
+    if (hrdData) {
+        layers.push(logratio_bin_data_encoding("hrd_logratio_bin"));
+    }
+
+    if (tso500Data) {
+        layers.push(logratio_bin_data_encoding("tso500_logratio_bin", [
+            { field: "gene", type: "nominal", title: "Gene" },
+            { field: "exon", type: "nominal", title: "Exon/Intron" },
+            { field: "Tx", type: "nominal", title: "Transcript" }
+        ]));
+    }
+
+    layers.push({
+        data: { name: "chrom_boundaries" },
+        mark: {
+            type: "rule",
+            color: "#B0B8C0",
+            strokeWidth: 1,
+            strokeDash: [3, 3],
+            tooltip: null
+        },
+        encoding: {
+            x: {
+                title: null,
+                field: "boundary",
+                type: "quantitative",
+                scale: { name: "binScale", zoom: true, nice: false }
+            }
+        }
+    });
+
+    layers.push({
+        data: { name: "chrom_labels" },
+        mark: {
+            type: "text",
+            dy: 120,
+            size: 11,
+            color: "#0e0e0e",
+            tooltip: null
+        },
+        encoding: {
+            x: {
+                title: null,
+                field: "position",
+                type: "quantitative",
+                scale: { name: "binScale", zoom: true, nice: false }
+            },
+            text: {
+                field: "label",
+                type: "nominal"
+            }
+        }
+    });
+
+    if (segments) {
+        layers.push({
+            data: { name: "segments_classified_bin" },
+            transform: [
+                { type: "formula", expr: `(datum.value < ${clampMin} ? ${clampMin} : datum.value)`, as: "_clampedValue" }
+            ],
+            encoding: {
+                x: { field: "startBin", type: "quantitative", scale: { name: "binScale", zoom: true, nice: false } },
+                x2: { field: "endBin" },
+                y: yEncoding,
+                stroke: cnvStatus_encoding,
+                color: cnvStatus_encoding,
+                tooltip: [
+                    { field: "name", type: "nominal", title: "Gene" },
+                    { field: "value", type: "quantitative", title: "Log2", format: ".3f" },
+                    { field: "cnvStatus", type: "nominal", title: "Status" }
+                ]
+            },
+            stops: [0.5],
+            multiscale: [
+                {
+                    transform: [{ type: "filter", expr: "datum.cnvStatus !== 'neutral'" }],
+                    mark: { type: "rect", minWidth: 5, cornerRadius: 5, clip: true, size: 3, fillOpacity: 0.4, strokeWidth: 2, strokeOpacity: 0.6 }
+                },
+                {
+                    mark: { type: "rule", clip: true, size: 3, opacity: 0.8 }
+                }
+            ]
+        });
+    }
+
+    return {
+        name: "logratioBinTrack",
+        height: options.height ?? 300,
+        layer: layers,
+        resolve: {
+            scale: {
+                y: "shared",
+                color: "independent",
+                stroke: "independent"
+            }
+        }
+    };
+};
+
