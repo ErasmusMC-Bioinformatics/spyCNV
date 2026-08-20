@@ -117,3 +117,7 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
         plots=plots,
     )
     return html
+
+
+def _calculate_CNV_thresholds(segments, purity, ploidy):
+    pass
