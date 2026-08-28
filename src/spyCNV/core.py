@@ -44,12 +44,9 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
     template = env.get_template("base.html.jinja2")
 
     genomespy_js = load_resource(Path("static", "genome-spy_core@0.84.0.js"))
-    plots = {
-        "ideogram": load_resource(Path("plots", "ideogramTrack.js")),
-        "logratio": load_resource(Path("plots", "logratioTrack.js")),
-        "baf": load_resource(Path("plots", "bAlleleFrequencyTrack.js")),
-        "geneAnnotation": load_resource(Path("plots", "geneAnnotationTrack.js")),
-    }
+    gridjs_js = load_resource(Path("static", "gridjs.umd.js"))
+    gridjs_css = load_resource(Path("static", "gridjs-mermaid.min.css"))
+    app_js = load_resource(Path("static", "app.js"))
 
     data: dict[str, str | list[dict] | None] = {
         "cytoband": load_resource(Path("data", f"cytoBand.{genome}.tsv")),
@@ -113,8 +110,10 @@ def render_html(sample_id: str, cnv_data: CNVData, genome: str = "hg19") -> str:
     html = template.render(
         sample_id=sample_id,
         genomespy_js=genomespy_js,
+        gridjs_js=gridjs_js,
+        gridjs_css=gridjs_css,
+        app_js=app_js,
         data=data,
-        plots=plots,
     )
     return html
 

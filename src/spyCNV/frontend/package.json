@@ -1,0 +1,18 @@
+{
+  "name": "spycnv-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript sources for the spyCNV standalone HTML report. Built with esbuild into src/spyCNV/static/app.js and inlined by the Python backend.",
+  "scripts": {
+    "build": "node ../scripts/build_js.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
+}

@@ -51,8 +51,7 @@
          .threshold-item input[type="range"] { flex: 1; height: 4px; border-radius: 2px; accent-color: #4575B4; cursor: pointer; }
          .threshold-item input[type="number"] { width: 55px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #ced4da; border-radius: 4px; text-align: right; }
         </style>
-        <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
-        <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+        <style>{{ gridjs_css | safe }}</style>
     </head>
     <body>
         <div id="header">
@@ -60,30 +59,30 @@
             <div class="controls">
                 <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
                 <div class="segmented-control">
-                    <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)"><span>All</span></label>
+                    <label><input type="radio" name="displayMode" value="both" checked><span>All</span></label>
                     {% if data.tso500_baf or data.tso500_logratio %}
-                    <label><input type="radio" name="displayMode" value="tso500" onchange="updateDisplayMode(this.value)"><span>TSO500</span></label>
+                    <label><input type="radio" name="displayMode" value="tso500"><span>TSO500</span></label>
                     {% endif %}
                     {% if data.hrd_baf or data.hrd_logratio %}
-                    <label><input type="radio" name="displayMode" value="hrd" onchange="updateDisplayMode(this.value)"><span>HRD</span></label>
+                    <label><input type="radio" name="displayMode" value="hrd"><span>HRD</span></label>
                     {% endif %}
-                    <label><input type="radio" name="displayMode" value="bin" onchange="updateDisplayMode(this.value)"><span>Bin</span></label>
+                    <label><input type="radio" name="displayMode" value="bin"><span>Bin</span></label>
                 </div>
             </div>
         </div>
-        
+
         <div id="content">
             <div id="visualization-container">
                 <div id="visualization"></div>
             </div>
-            
+
             <div id="table-container">
                 <h3>Settings</h3>
                 <div id="table-controls">
                     <div class="control-group">
                         <label class="toggle-container">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="prio-toggle" onchange="grid.forceRender()">
+                                <input type="checkbox" id="prio-toggle">
                                 <span class="slider"></span>
                             </span>
                             <span>Key Cancer Genes Only</span>
@@ -91,11 +90,11 @@
                     </div>
                     <div class="control-group">
                         <div class="segmented-control">
-                            <label><input type="radio" name="log2Filter" value="All" checked onchange="grid.forceRender()"><span>All</span></label>
-                            <label><input type="radio" name="log2Filter" value="All Amplification and Loss" onchange="grid.forceRender()"><span>All Amp &amp; Loss</span></label>
-                            <label><input type="radio" name="log2Filter" value="Gain" onchange="grid.forceRender()"><span id="lbl-gain-filter">Gain (&gt;0.5)</span></label>
-                            <label><input type="radio" name="log2Filter" value="Loss" onchange="grid.forceRender()"><span id="lbl-loss-filter">Loss (&lt;-0.5)</span></label>
-                            <label><input type="radio" name="log2Filter" value="Deep Loss" onchange="grid.forceRender()"><span id="lbl-deeploss-filter">Deep Loss (&lt;-1.0)</span></label>
+                            <label><input type="radio" name="log2Filter" value="All" checked><span>All</span></label>
+                            <label><input type="radio" name="log2Filter" value="All Amplification and Loss"><span>All Amp &amp; Loss</span></label>
+                            <label><input type="radio" name="log2Filter" value="Gain"><span id="lbl-gain-filter">Gain (&gt;0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Loss"><span id="lbl-loss-filter">Loss (&lt;-0.5)</span></label>
+                            <label><input type="radio" name="log2Filter" value="Deep Loss"><span id="lbl-deeploss-filter">Deep Loss (&lt;-1.0)</span></label>
                         </div>
                     </div>
                     <!-- <div class="threshold-controls">
@@ -120,535 +119,15 @@
                 <div id="gene-table-wrapper"></div>
             </div>
         </div>
+
         <script>{{ genomespy_js | safe }}</script>
-
+        <script>{{ gridjs_js | safe }}</script>
+        <script>{{ app_js | safe }}</script>
         <script>
-         {{ plots.ideogram }}
-         {{ plots.logratio }}
-         {{ plots.baf }}
-         {{ plots.geneAnnotation }}
-
-         const cytobandData = `{{ data.cytoband | safe }}`;
-         const refseqGenes = `{{ data.refseq | safe }}`;
-         
-         const hrd_baf = {{ data.hrd_baf | tojson | default('null', true) }};
-         const hrd_logratio = {{ data.hrd_logratio | tojson | default('null', true) }};
-         const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
-         const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
-         const segments = {{ data.segments | tojson | default('null', true) }};
-         const min_logratio = [{ _value: -2.5 }];
-         
-         let embedResult = null;
-         let genomeScale = null;
-         let binScale = null;
-         let currentDisplayMode = "both";
-
-         let thresholds = {
-             gain: 0.5,
-             loss: -0.5,
-             deeploss: -1.0
-         };
-
-         function chrOrder(chr) {
-             const val = String(chr).replace('chr', '').trim();
-             if (!isNaN(val)) return parseInt(val);
-             if (val === 'X' || val === 'x') return 23;
-             if (val === 'Y' || val === 'y') return 24;
-             if (val === 'M' || val === 'm' || val === 'MT' || val === 'mt') return 25;
-             return 99;
-         }
-
-         function prepareCombinedBinData(tso500_records, hrd_records) {
-             const allRecords = [];
-             if (tso500_records) {
-                 for (const r of tso500_records) {
-                     allRecords.push({ ...r, _source: 'tso500' });
-                 }
-             }
-             if (hrd_records) {
-                 for (const r of hrd_records) {
-                     allRecords.push({ ...r, _source: 'hrd' });
-                 }
-             }
-
-             if (!allRecords.length) {
-                 return {
-                     tso500Data: [],
-                     hrdData: [],
-                     allData: [],
-                     chromBoundaries: [],
-                     chromRegions: [],
-                     chromLabels: []
-                 };
-             }
-
-             const formatted = allRecords.map(d => {
-                 const val = d.value !== undefined ? d.value : d.log2;
-                 const chr = String(d.contig || d.chromosome || d.Chr || '').replace('chr', '');
-                 const gene = d.gene ? d.gene.split('_')[0] : (d.name || '');
-                 return {
-                     Chr: `chr${chr}`,
-                     contig: chr,
-                     start: d.start,
-                     end: d.end || d.start,
-                     gene: gene,
-                     exon: d.exon || '',
-                     Tx: d.Tx || '',
-                     value: val,
-                     _source: d._source
-                 };
-             });
-
-             // Sort ALL records together by genomic position (chromosome order, then start position)
-             formatted.sort((a, b) => {
-                 const numA = chrOrder(a.contig);
-                 const numB = chrOrder(b.contig);
-                 if (numA !== numB) return numA - numB;
-                 return (a.start || 0) - (b.start || 0);
-             });
-
-             // Assign sequential bin index based on genomic order
-             const allData = formatted.map((d, i) => ({ ...d, _binIndex: i }));
-
-             const chromBoundaries = [];
-             const chromRegions = [];
-             const chromLabels = [];
-             let lastChrom = null;
-             let chromStart = 0;
-
-             allData.forEach((d, i) => {
-                 if (d.contig !== lastChrom) {
-                     if (lastChrom !== null) {
-                         chromBoundaries.push({ boundary: i, chrom: lastChrom });
-                         const midpoint = (chromStart + i - 1) / 2;
-                         chromRegions.push({
-                             start: chromStart,
-                             end: i - 1,
-                             chrom: lastChrom,
-                             midpoint: midpoint,
-                             isEven: chromRegions.length % 2 === 0 ? "even" : "odd"
-                         });
-                         chromLabels.push({
-                             position: midpoint,
-                             label: lastChrom
-                         });
-                         chromStart = i;
-                     }
-                     lastChrom = d.contig;
-                 }
-             });
-
-             if (lastChrom !== null && allData.length > 0) {
-                 const midpoint = (chromStart + allData.length - 1) / 2;
-                 chromRegions.push({
-                     start: chromStart,
-                     end: allData.length - 1,
-                     chrom: lastChrom,
-                     midpoint: midpoint,
-                     isEven: chromRegions.length % 2 === 0 ? "even" : "odd"
-                 });
-                 chromLabels.push({
-                     position: midpoint,
-                     label: lastChrom
-                 });
-             }
-
-             const tso500Data = allData.filter(d => d._source === 'tso500');
-             const hrdData = allData.filter(d => d._source === 'hrd');
-
-             return {
-                 tso500Data,
-                 hrdData,
-                 allData,
-                 chromBoundaries,
-                 chromRegions,
-                 chromLabels
-             };
-         }
-
-         const combinedBinData = prepareCombinedBinData(tso500_logratio, hrd_logratio);
-
-         function classifySegments() {
-             if (!segments) return [];
-             return segments.map(s => ({
-                 ...s,
-                 cnvStatus: s.value >= thresholds.gain ? 'gain'
-                          : s.value <= thresholds.deeploss ? 'deeploss'
-                          : s.value <= thresholds.loss ? 'loss'
-                          : 'neutral'
-             }));
-         }
-
-         function classifyBinSegments() {
-             if (!segments) return [];
-             const baseData = combinedBinData.allData;
-             if (!baseData || !baseData.length) return [];
-
-             const classified = classifySegments();
-             const result = [];
-             for (const seg of classified) {
-                 const segChr = String(seg.contig).replace('chr', '');
-                 const matching = baseData.filter(r => r.contig === segChr && r.start >= seg.start && r.start <= seg.end);
-                 if (matching.length > 0) {
-                     const startBin = matching[0]._binIndex;
-                     const endBin = matching[matching.length - 1]._binIndex;
-                     result.push({
-                         ...seg,
-                         startBin,
-                         endBin
-                     });
-                 }
-             }
-             return result;
-         }
-
-         function onThresholdChange(type, val) {
-             let num = parseFloat(val);
-             if (isNaN(num)) return;
-
-             if (type === 'gain') {
-                 num = Math.min(Math.max(num, 0.1), 2.0);
-                 thresholds.gain = num;
-                 document.getElementById('gain-slider').value = num;
-                 document.getElementById('gain-input').value = num;
-             } else if (type === 'loss') {
-                 num = Math.min(Math.max(num, -2.0), -0.1);
-                 thresholds.loss = num;
-                 document.getElementById('loss-slider').value = num;
-                 document.getElementById('loss-input').value = num;
-             } else if (type === 'deeploss') {
-                 num = Math.min(Math.max(num, -5.0), -0.6);
-                 thresholds.deeploss = num;
-                 document.getElementById('deeploss-slider').value = num;
-                 document.getElementById('deeploss-input').value = num;
-             }
-
-             const gainLbl = document.getElementById("lbl-gain-filter");
-             if (gainLbl) gainLbl.innerText = `Gain (>${thresholds.gain.toFixed(2)})`;
-             const lossLbl = document.getElementById("lbl-loss-filter");
-             if (lossLbl) lossLbl.innerText = `Loss (<${thresholds.loss.toFixed(2)})`;
-             const deepLossLbl = document.getElementById("lbl-deeploss-filter");
-             if (deepLossLbl) deepLossLbl.innerText = `Deep Loss (<${thresholds.deeploss.toFixed(2)})`;
-
-             if (grid) grid.forceRender();
-             if (embedResult) {
-                 embedResult.updateNamedData("gain_threshold",          [{ _val: thresholds.gain }]);
-                 embedResult.updateNamedData("loss_threshold",          [{ _val: thresholds.loss }]);
-                 embedResult.updateNamedData("deeploss_threshold",      [{ _val: thresholds.deeploss }]);
-                 embedResult.updateNamedData("segments_classified",     classifySegments());
-                 embedResult.updateNamedData("segments_classified_bin", classifyBinSegments());
-             }
-         }
-
-         function getSpec() {
-             return {
-                 "assembly": "hg19",
-                 "params": [{ "name": "brush" }],
-                 "config": {
-                     "legend": { "disable": true }
-                 },
-                 "vconcat": [
-                     ideogramTrack(cytobandData),
-                     logratioTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
-                         gainThreshold: thresholds.gain,
-                         lossThreshold: thresholds.loss,
-                         deepLossThreshold: thresholds.deeploss
-                     }),
-                     geneAnnotationTrack(refseqGenes),
-                     bAlleleFrequencyTrack(hrd_baf, tso500_baf, cytobandData)
-                 ]
-             };
-         }
-
-         function getBinSpec() {
-             return {
-                 "config": {
-                     "legend": { "disable": true }
-                 },
-                 "vconcat": [
-                     logratioBinTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
-                         height: 300,
-                         gainThreshold: thresholds.gain,
-                         lossThreshold: thresholds.loss,
-                         deepLossThreshold: thresholds.deeploss
-                     })
-                 ]
-             };
-         }
-
-         function showMinLogratio(showHrd, showTso500) {
-             const min_hrd_log = hrd_logratio ? Math.min(...hrd_logratio.map(r => r.value)) : 0;
-             const min_tso_log = tso500_logratio ? Math.min(...tso500_logratio.map(r => r.value)) : 0;
-             const min_logratio_value = min_logratio[0]._value;
-             return (showHrd && min_hrd_log <= min_logratio_value) || (showTso500 && min_tso_log <= min_logratio_value);
-         }
-
-         function updateDisplayMode(value) {
-             const prevMode = currentDisplayMode;
-             currentDisplayMode = value;
-
-             if (value === 'bin' || prevMode === 'bin') {
-                 renderPlot();
-                 return;
-             }
-
-             if (!embedResult) return;
-             const showHrd    = (value === 'both' || value === 'hrd');
-             const showTso500 = (value === 'both' || value === 'tso500');
-
-             embedResult.updateNamedData("min_logratio", showMinLogratio(showHrd, showTso500) ? min_logratio : []);
-             embedResult.updateNamedData("hrd_logratio", showHrd ? hrd_logratio : []);
-             embedResult.updateNamedData("tso500_logratio", showTso500 ? tso500_logratio : []);
-             embedResult.updateNamedData("hrd_baf", showHrd ? hrd_baf : []);
-             embedResult.updateNamedData("tso500_baf", showTso500 ? tso500_baf : []);
-         }
-
-         function renderPlot() {
-             const container = document.getElementById("visualization");
-             container.innerHTML = "";
-             const isBin = (currentDisplayMode === "bin");
-
-             const namedDataProvider = (name) => {
-                 if (isBin) {
-                     if (name === "tso500_logratio_bin") return combinedBinData.tso500Data;
-                     if (name === "hrd_logratio_bin") return combinedBinData.hrdData;
-                     if (name === "chrom_regions") return combinedBinData.chromRegions;
-                     if (name === "chrom_boundaries") return combinedBinData.chromBoundaries;
-                     if (name === "chrom_labels") return combinedBinData.chromLabels;
-                     if (name === "min_logratio") return showMinLogratio(true, true) ? min_logratio : [];
-                     if (name === "gain_threshold") return [{ _val: thresholds.gain }];
-                     if (name === "loss_threshold") return [{ _val: thresholds.loss }];
-                     if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
-                     if (name === "segments_classified_bin") return classifyBinSegments();
-                 } else {
-                     const showHrd = (currentDisplayMode === 'both' || currentDisplayMode === 'hrd');
-                     const showTso500 = (currentDisplayMode === 'both' || currentDisplayMode === 'tso500');
-                     if (name === "hrd_logratio") return showHrd ? (hrd_logratio ?? []) : [];
-                     if (name === "tso500_logratio") return showTso500 ? (tso500_logratio ?? []) : [];
-                     if (name === "hrd_baf") return showHrd ? (hrd_baf ?? []) : [];
-                     if (name === "tso500_baf") return showTso500 ? (tso500_baf ?? []) : [];
-                     if (name === "min_logratio") return showMinLogratio(showHrd, showTso500) ? min_logratio : [];
-                     if (name === "gain_threshold") return [{ _val: thresholds.gain }];
-                     if (name === "loss_threshold") return [{ _val: thresholds.loss }];
-                     if (name === "deeploss_threshold") return [{ _val: thresholds.deeploss }];
-                     if (name === "segments_classified") return classifySegments();
-                 }
-             };
-
-             const spec = isBin ? getBinSpec() : getSpec();
-             genomeSpyEmbed.embed(container, spec, { namedDataProvider }).then(res => {
-                 embedResult = res;
-                 if (isBin) {
-                     binScale = res.getScaleResolutionByName("binScale");
-                     genomeScale = null;
-                 } else {
-                     genomeScale = res.getScaleResolutionByName("genomeScale");
-                     binScale = null;
-                 }
-             });
-         }
-         renderPlot();
-
-         let tableData = [];
-         let grid = null;
-         
-         function generateTableData() {
-             if (!segments || !refseqGenes) return;
-             
-             const lines = refseqGenes.trim().split('\n');
-             const genes = lines.map(line => {
-                 const cols = line.split('\t');
-                 return {
-                     symbol: cols[0],
-                     chrom: cols[1] ? cols[1].replace('chr', '') : '',
-                     start: parseInt(cols[2]),
-                     end: parseInt(cols[2]) + parseInt(cols[3]),
-                     score: parseInt(cols[5]) || 0
-                 };
-             });
-             
-             tableData = [];
-             
-             segments.forEach(seg => {
-                 const segChr = seg.contig;
-                 const segStart = seg.start;
-                 const segEnd = seg.end;
-                 const segLog2 = seg.value;
-                 
-                 genes.forEach(g => {
-                     if (g.chrom === segChr && Math.max(g.start, segStart) <= Math.min(g.end, segEnd)) {
-                         tableData.push({
-                             chr: segChr,
-                             start: g.start,
-                             end: g.end,
-                             gene: g.symbol,
-                             log2: segLog2,
-                             score: g.score
-                         });
-                     }
-                 });
-             });
-             
-             const uniqueGenes = {};
-             tableData.forEach(item => {
-                 if (!uniqueGenes[item.gene] || Math.abs(item.log2) > Math.abs(uniqueGenes[item.gene].log2)) {
-                     uniqueGenes[item.gene] = item;
-                 }
-             });
-             
-             const prio1 = ['BRCA1', 'BRCA2', 'CDKN2A', 'PTEN', 'RB1', 'STK11', 'TP53', 'APC', 'ATM', 'BAP1', 'CDH1', 'MLH1', 'MSH2', 'MSH6', 'NF1', 'NF2', 'RAD51C', 'VHL'];
-             const prio2 = ['AR','BRAF','CCND1','CCNE1','CDK4','CDK6','EGFR','ERBB2','ERBB3',
-                            'FGFR1','FGFR3','KRAS','MCL1','MDM2','MET','MITF','MYC','MYCL1',
-                            'MYCN','NKX2-1','PDGFRA','PIK3CA','SOX2','TERT','ZNF703'];
-
-             function getGeneClass(gene) {
-                 if (prio1.includes(gene)) return 'gene-prio1';
-                 if (prio2.includes(gene)) return 'gene-prio2';
-                 return '';
-             }
-
-             function getPrio(gene) {
-                 if (prio1.includes(gene)) return 1;
-                 if (prio2.includes(gene)) return 2;
-                 return 3;
-             }
-
-             function annotateCNVstatus(log) {
-                 const log_fl = parseFloat(log);
-                 let symbol = '';
-                 let cls = '';
-
-                 if (log_fl >= thresholds.gain) {
-                     symbol = '🡱';
-                     cls = 'gain';
-                 } else if (log_fl <= thresholds.deeploss) {
-                     symbol = '🡳🡳';
-                     cls = 'deeploss';
-                 } else if (log_fl <= thresholds.loss) {
-                     symbol = '🡳';
-                     cls = 'loss';
-                 }
-
-                 if (symbol) {
-                     return `<div class="cnv-cell">
-                    <span class="${cls}">${symbol}</span>
-                    <span style="text-align: right;">
-                        ${log_fl.toFixed(3)}
-                    </span>
-                </div>`;
-                 }
-                 return `<div class="cnv-cell">
-                    <span class="${cls}">${symbol}</span>
-                    <span style="text-align: right;">
-                        ${log_fl.toFixed(3)}
-                    </span>
-                </div>`;
-             }
-             function chrOrder(chr) {
-                 const val = chr.replace('chr', '').trim();
-                 if (!isNaN(val)) return parseInt(val);
-                 if (val === 'X') return 23;
-                 if (val === 'Y') return 24;
-                 if (val === 'M') return 25;
-                 return 99;
-             }
-
-             tableData = Object.values(uniqueGenes);
-             tableData.sort((a, b) => {
-                 const pA = getPrio(a.gene);
-                 const pB = getPrio(b.gene);
-                 if (pA !== pB) return pA - pB;
-                 return Math.abs(b.log2) - Math.abs(a.log2);
-             });
-             
-             grid = new gridjs.Grid({
-                 columns: [
-                     {
-                         name: 'Chr',
-                         sort: {
-                             compare: (a, b) => chrOrder(a) - chrOrder(b)
-                         }
-                     },
-                     {
-                         name: 'Gene',
-                         formatter: (cell) => {
-                             const cls = getGeneClass(cell);
-                             if (cls) {
-                                 return gridjs.html(`<span class="${cls}">${cell}</span>`);
-                             }
-                             return cell;
-                         }
-                     },
-                     {
-                         name: 'Log2(FC)',
-                         sort: true,
-                         formatter: (log) => {
-                             const log_str = annotateCNVstatus(log);
-                             return gridjs.html(log_str);
-                         }
-                     }, 'Start', { name: '_idx', hidden: true }
-                 ],
-                 data: () => {
-                     const filterRadio = document.querySelector('input[name="log2Filter"]:checked');
-                     const filter = filterRadio ? filterRadio.value : 'All';
-                     const prioOnly = document.getElementById("prio-toggle") ? document.getElementById("prio-toggle").checked : false;
-                     let dt = tableData;
-                     if (prioOnly) {
-                         dt = dt.filter(d => getPrio(d.gene) < 3);
-                     }
-                     if (filter === "Gain") {
-                         dt = dt.filter(d => d.log2 >= thresholds.gain);
-                     } else if (filter === "Loss") {
-                         dt = dt.filter(d => d.log2 <= thresholds.loss && d.log2 > thresholds.deeploss);
-                     } else if (filter === "Deep Loss") {
-                         dt = dt.filter(d => d.log2 <= thresholds.deeploss);
-                     } else if (filter === "All Amplification and Loss") {
-                         dt = dt.filter(d => d.log2 >= thresholds.gain || d.log2 <= thresholds.loss);
-                     }
-                     return dt.map(r => [r.chr, r.gene, r.log2, r.start, r.end]);
-                 },
-                 search: true,
-                 sort: true,
-                 fixedHeader: true,
-                 maxHeight: '600px'
-             }).render(document.getElementById("gene-table-wrapper"));
-
-             grid.on('rowClick', (...args) => {
-                 const row = args[1];
-                 const rawChr = row.cells[0].data;
-                 const chr = "chr" + rawChr;
-                 const cleanChr = String(rawChr).replace('chr', '');
-                 const gene = row.cells[1].data;
-                 const start = parseInt(row.cells[3].data);
-                 const end = parseInt(row.cells[4].data);
-                 
-                 if (currentDisplayMode === 'bin') {
-                     const geneBins = combinedBinData.allData.filter(r => r.gene === gene || (r.contig === cleanChr && r.start >= start && r.start <= end));
-                     if (geneBins.length > 0) {
-                         const minBin = Math.min(...geneBins.map(b => b._binIndex));
-                         const maxBin = Math.max(...geneBins.map(b => b._binIndex));
-                         const pad = Math.max(15, (maxBin - minBin + 1) * 2);
-                         if (binScale) {
-                             binScale.zoomTo([Math.max(0, minBin - pad), maxBin + pad], true);
-                         }
-                     } else {
-                         const chrRegion = combinedBinData.chromRegions.find(c => c.chrom === cleanChr);
-                         if (chrRegion && binScale) {
-                             binScale.zoomTo([chrRegion.start - 5, chrRegion.end + 5], true);
-                         }
-                     }
-                 } else if (genomeScale) {
-                     const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 15000000) },
-                         { chrom: chr, pos: end + 15000000 }
-                     ];
-                     genomeScale.zoomTo(zoomDomain, true);
-                 }
-             });
-         }
-         
-         setTimeout(generateTableData, 500);
-
+         window.spyCNV.init({
+             "sampleId": {{ sample_id | tojson }},
+             "data": {{ data | tojson }}
+         });
         </script>
     </body>
 </html>

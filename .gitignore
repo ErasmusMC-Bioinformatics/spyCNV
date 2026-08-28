@@ -3,6 +3,9 @@ __pycache__/
 /*.html
 /tmp/
 
+# Frontend build
+src/spyCNV/frontend/node_modules/
+
 # Devenv
 .devenv*
 devenv.local.nix

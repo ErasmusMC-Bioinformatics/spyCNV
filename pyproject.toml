@@ -14,6 +14,15 @@ dev = [ "pytest" ]
 [project.scripts]
 spy = "spyCNV.cli:app"
 
+[tool.hatch.build.targets.wheel]
+# TypeScript sources, node_modules, and dev tooling must not ship in the
+# wheel — only the built static/app.js (plus the other vendored assets) is
+# needed at runtime.
+exclude = [
+  "src/spyCNV/frontend/**",
+  "src/spyCNV/scripts/**",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
