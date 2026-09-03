@@ -1271,7 +1271,6 @@ var spyCNVApp = (() => {
           formatter: (log) => gridjs.html(annotateCNVstatus(String(log), thresholds))
         },
         "Start",
-        // Hidden column that carries the segment end position (see rowClick).
         { name: "_idx", hidden: true }
       ],
       data: () => {
