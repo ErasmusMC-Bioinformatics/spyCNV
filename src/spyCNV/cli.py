@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -47,7 +48,8 @@ def generate(
         output_path=output_dir,
     )
 
-    typer.echo(f"Report written successfully.")
+    output_file = Path(output_dir, f"{sample_id}.spyCNV.html")
+    typer.echo(f"Report '{output_file}' written successfully.")
 
 
 @app.command()
