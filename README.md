@@ -1,8 +1,12 @@
 # spyCNV
 
 spyCNV is a modern copy number variation (CNV) analysis tool that produces standalone HTML reports. It can be used both as a command‑line application and imported as a Python library in pipelines. 
-<img width="1920" height="799" alt="image" src="https://github.com/user-attachments/assets/092b1f90-cf60-468e-b2b8-b788a3b692e8" />
+<img width="1920" height="894" alt="image" src="https://github.com/user-attachments/assets/493e3d41-7e02-4870-af75-cd11b6018477" />
 [Live Demo](https://ErasmusMC-Bioinformatics.github.io/spyCNV/) (the test data is fictive and might contain unrealistic oncogenic patterns)
+
+
+
+
 
 
 ## Features
