@@ -13,7 +13,7 @@ app = typer.Typer(name="spyCNV", help="", add_completion=False)
 
 @app.command()
 def generate(
-    sample_id: Annotated[str, typer.Option("--sample-id", "-s", help="Sample ID")],
+    sample_id: Annotated[str, typer.Option("--id", help="Sample ID")],
     vcf: Annotated[
         str | None, typer.Option("--vcf", "-v", help="Path to TSO500 hard-filtered VCF")
     ] = None,
@@ -29,7 +29,8 @@ def generate(
         str | None, typer.Option("--logratio", "-l", help="Path to HRD logRatio.tsv")
     ] = None,
     segments: Annotated[
-        str | None, typer.Option("--segments", help="Path to segments file (.seg)")
+        str | None,
+        typer.Option("--segments", "-s", help="Path to segments file (.seg)"),
     ] = None,
     purity: Annotated[
         float | None,

@@ -84,17 +84,17 @@ spy generate [OPTIONS]
 
 Options:
 
-| Option         | Short | Description                         |
-| ------------   | ----- | ----------------------------------- |
-| `--sample-id`  | `-s`  | Sample ID                           |
-| `--vcf`        | `-v`  | Path to TSO500 hard-filtered VCF    |
-| `--tn`         | `-t`  | Path to TSO500 tn.tsv.gz (LogRatio) |
-| `--ballele`    | `-b`  | Path to HRD bAllele.tsv (BAF)       |
-| `--logratio`   | `-l`  | Path to HRD logRatio.tsv            |
-| `--segments`   |       | Path to segments file (.seg)             |
-| `--output-dir` |       | Path to output directory (default:.)     |
-
-
+|Option        |Short|Description                                                 |
+|--------------|-----|------------------------------------------------------------|
+|`--id`        |     |Sample ID                                                   |
+|`--vcf`       |`-v` |Path to TSO500 hard-filtered VCF                            |
+|`--tn`        |`-t` |Path to TSO500 tn.tsv.gz (LogRatio)                         |
+|`--ballele`   |`-b` |Path to HRD bAllele.tsv (BAF)                               |
+|`--logratio`  |`-l` |Path to HRD logRatio.tsv                                    |
+|`--segments`  |`-s` |Path to segments file (.seg)                                |
+|`--purity`    |     |Tumor fraction value (float: [0-1]); provide with `--ploidy`|
+|`--ploidy`    |     |Sample ploidy (float: >0); provide with `--purity`          |
+|`--output-dir`|     |Path to output directory (default:.)                        |
 
 ### As a library
 
@@ -118,7 +118,7 @@ html = generate_html(
 ### Quick test
 After installing, you can immediately generate a demo report using the included test data:
 ```bash
-spy generate --sample-id SXX-XXXT \
+spy generate --id SXX-XXXT \
     --vcf tests/data/SXX-XXXT.hard-filtered.vcf.gz \
     --tn tests/data/SXX-XXXT.tn.tsv.gz \
     --ballele tests/data/SXX-XXXT_bAllele.tsv \
@@ -130,7 +130,7 @@ Output: `SXX-XXXT.spyCNV.html`
 ### Illumina DRAGEN TSO500
 Example command matching the TSO500 output folder structure:
 ```bash
-spy generate --sample-id SAMPLE01 \
+spy generate --id SAMPLE01 \
     --vcf DnaDragenCaller/SAMPLE01/SAMPLE01.hard-filtered.vcf.gz \
     --tn DnaDragenCaller/SAMPLE01/SAMPLE01.tn.tsv.gz \
     --ballele Gis/SAMPLE01/SAMPLE01_bAllele.tsv \

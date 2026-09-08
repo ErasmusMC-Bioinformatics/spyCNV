@@ -37,7 +37,7 @@
     dev-html = {
       description = "generate an output file on src file change";
       exec = ''
-        fd -tf | entr -c spy generate --sample-id SXX-XXXT \
+        fd -tf | entr -c spy generate --id SXX-XXXT \
           --vcf tests/data/SXX-XXXT.hard-filtered.vcf.gz \
           --tn tests/data/SXX-XXXT.tn.tsv.gz \
           --ballele tests/data/SXX-XXXT_bAllele.tsv \
@@ -51,7 +51,7 @@
     gh-pages = {
       description = "generate html from sample data for github pages";
       exec = ''
-        spy generate --sample-id SXX-XXXT \
+        spy generate --id SXX-XXXT \
           --vcf tests/data/SXX-XXXT.hard-filtered.vcf.gz \
           --tn tests/data/SXX-XXXT.tn.tsv.gz \
           --ballele tests/data/SXX-XXXT_bAllele.tsv \
