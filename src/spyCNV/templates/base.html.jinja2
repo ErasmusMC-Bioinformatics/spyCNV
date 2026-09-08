@@ -30,7 +30,6 @@
          input:checked + .slider { background-color: #4575B4; }
          input:checked + .slider:before { transform: translateX(16px); }
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-
          .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
          .gridjs-th {padding: 4px 8px !important; font-size: 0.82rem !important;}
          .gridjs-wrapper {height: auto !important; max-height: 700px;}
@@ -44,7 +43,8 @@
          .loss { color: #4575B4; font-weight: 300; }
          .deeploss { color: #313695; font-weight: 300; }
          .cnv-cell {display: flex; justify-content: space-between; align-items: center; width: 100%;}
-
+         .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: #fff; background: #4575B4; padding: 4px 10px; border-radius: 12px; }
+         .badge .muted { font-weight: 400; opacity: 0.85; }
          .threshold-controls { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 8px; border-top: 1px solid #e9ecef; }
          .threshold-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: #495057; }
          .threshold-item label { width: 75px; flex-shrink: 0; }
@@ -58,6 +58,13 @@
         <div id="header">
             <h1>{{ sample_id }}</h1>
             <div class="controls">
+                {% if purity is not none and ploidy is not none %}
+                <span class="badge" id="sample-stats">
+                    <span>Purity {{ "%.2f" | format(purity) }}</span>
+                    <span class="muted">·</span>
+                    <span>Ploidy {{ "%.2f" | format(ploidy) }}</span>
+                </span>
+                {% endif %}
                 <span style="font-weight: bold; font-size: 0.9rem;">View:</span>
                 <div class="segmented-control">
                     <label><input type="radio" name="displayMode" value="both" checked onchange="updateDisplayMode(this.value)"><span>All</span></label>

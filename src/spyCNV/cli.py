@@ -31,6 +31,20 @@ def generate(
     segments: Annotated[
         str | None, typer.Option("--segments", help="Path to segments file (.seg)")
     ] = None,
+    purity: Annotated[
+        float | None,
+        typer.Option(
+            "--purity",
+            help="Tumour purity (0-1). Provide together with --ploidy to scale the CNV thresholds to the sample's copy-number states.",
+        ),
+    ] = None,
+    ploidy: Annotated[
+        float | None,
+        typer.Option(
+            "--ploidy",
+            help="Tumour ploidy. Provide together with --purity to scale the CNV thresholds to the sample's copy-number states.",
+        ),
+    ] = None,
     output_dir: Annotated[
         str | None, typer.Option("--output-dir", help="Path to output directory")
     ] = ".",
@@ -46,6 +60,8 @@ def generate(
         ballele=ballele,
         segments=segments,
         output_path=output_dir,
+        purity=purity,
+        ploidy=ploidy,
     )
 
     output_file = Path(output_dir, f"{sample_id}.spyCNV.html")

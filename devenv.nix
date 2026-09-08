@@ -43,6 +43,8 @@
           --ballele tests/data/SXX-XXXT_bAllele.tsv \
           --logratio tests/data/SXX-XXXT_logRatio.tsv \
           --segments tests/data/SXX-XXXT.seg.called.merged \
+          --purity 0.710 \
+          --ploidy 2.02 \
           --output-dir /tmp/
       '';
     };
@@ -55,6 +57,8 @@
           --ballele tests/data/SXX-XXXT_bAllele.tsv \
           --logratio tests/data/SXX-XXXT_logRatio.tsv \
           --segments tests/data/SXX-XXXT.seg.called.merged \
+          --purity 0.710 \
+          --ploidy 2.02 \
           --output-dir docs/ && mv docs/SXX-XXXT.spyCNV.html docs/index.html
       '';
     };
