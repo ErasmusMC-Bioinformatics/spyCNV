@@ -32,7 +32,7 @@
          table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
          .gridjs-td {padding: 5px 18px !important; line-height: 1.2 !important; font-size: 0.82rem !important;}
          .gridjs-th {padding: 4px 8px !important; font-size: 0.82rem !important;}
-         .gridjs-wrapper {height: auto !important; max-height: 700px;}
+         .gridjs-wrapper {height: auto !important; max-height: 600px;}
          .gridjs-search input {padding: 3px 8px !important; font-size: 0.82rem !important;}
          .gridjs-tbody tr {height: auto !important; vertical-align: middle !important;}
          .gridjs-tbody .gridjs-tr:hover td { background-color: #f7f7f7 !important; transition: background-color 0.1s ease-out; cursor: pointer; }
@@ -617,7 +617,7 @@
                  search: true,
                  sort: true,
                  fixedHeader: true,
-                 maxHeight: '600px'
+                 maxHeight: '40px'
              }).render(document.getElementById("gene-table-wrapper"));
 
              grid.on('rowClick', (...args) => {
