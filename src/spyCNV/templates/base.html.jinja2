@@ -149,6 +149,7 @@
          let genomeScale = null;
          let binScale = null;
          let currentDisplayMode = "both";
+         let highlightGeneData = [];
 
          let thresholds = {
              gain: 0.5,
@@ -415,7 +416,10 @@
              container.innerHTML = "";
              const isBin = (currentDisplayMode === "bin");
 
+             highlightGeneData = [];
+
              const namedDataProvider = (name) => {
+                 if (name === "highlight_gene") return highlightGeneData;
                  if (isBin) {
                      if (name === "tso500_logratio_bin") return combinedBinData.tso500Data;
                      if (name === "hrd_logratio_bin") return combinedBinData.hrdData;
@@ -638,11 +642,13 @@
                          if (binScale) {
                              binScale.zoomTo([Math.max(0, minBin - pad), maxBin + pad], true);
                          }
+                         highlightGeneData = [{ startBin: minBin, endBin: maxBin }];
                      } else {
                          const chrRegion = combinedBinData.chromRegions.find(c => c.chrom === cleanChr);
                          if (chrRegion && binScale) {
                              binScale.zoomTo([chrRegion.start - 5, chrRegion.end + 5], true);
                          }
+                         highlightGeneData = [];
                      }
                  } else if (genomeScale) {
                      const zoomDomain = [
@@ -650,6 +656,11 @@
                          { chrom: chr, pos: end + 15000000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
+                     highlightGeneData = [{ contig: cleanChr, start: start, end: end }];
+                 }
+
+                 if (embedResult) {
+                     embedResult.updateNamedData("highlight_gene", highlightGeneData);
                  }
              });
          }

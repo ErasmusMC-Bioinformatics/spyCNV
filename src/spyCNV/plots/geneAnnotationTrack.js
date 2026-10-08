@@ -81,6 +81,34 @@ geneAnnotationTrack = (refseqGenes, options = {}) => ({
 
     layer: [
         {
+            name: "highlight",
+
+            data: { name: "highlight_gene" },
+
+            transform: [
+                { type: "linearizeGenomicCoordinate", chrom: "contig", pos: "start", as: "_hstart" },
+                { type: "formula", expr: "datum._hstart + (datum.end - datum.start)", as: "_hend" }
+            ],
+
+            mark: {
+                type: "rect",
+                clip: true,
+                minWidth: 2,
+                fill: "#8CF",
+                fillOpacity: 0.1,
+                stroke: "#8CF",
+                strokeWidth: 1.5,
+                strokeOpacity: 0.5,
+                tooltip: null
+            },
+
+            encoding: {
+                y: null,
+                x: { field: "_hstart", type: "locus", axis: null },
+                x2: { field: "_hend" }
+            }
+        },
+        {
             name: "transcripts",
 
             opacity: {

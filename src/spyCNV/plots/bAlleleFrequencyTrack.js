@@ -34,6 +34,24 @@ const bAlleleFrequencyTrack = (hrdData, tso500Data, cytobandData, options = {}) 
         }
     }
 
+    layers.push({
+        data: { name: "highlight_gene" },
+        mark: {
+            type: "rect",
+            clip: true,
+            minWidth: 2,
+            fill: "#8CF",
+            fillOpacity: 0.1,
+            stroke: "#8CF",
+            strokeWidth: 1.5,
+            strokeOpacity: 0.5
+        },
+        encoding: {
+            x: { chrom: "contig", pos: "start", type: "locus", scale: { name: "genomeScale" } },
+            x2: { chrom: "contig", pos: "end", type: "locus" }
+        }
+    });
+
     if (hrdData) {
         layers.push(baf_data_encoding("hrd_baf"));
     }
