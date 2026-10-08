@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+import base64
+import gzip
 import json
 from importlib.resources import files
 from pathlib import Path
@@ -13,7 +14,7 @@ _PKG = files(_APP)
 
 def write_file(file: str, content: str):
     with open(file, "w") as f:
-        f.write(content)
+        _ = f.write(content)
 
 
 def generate_html(
@@ -26,6 +27,7 @@ def generate_html(
     output_path: str,
     purity: float | None = None,
     ploidy: float | None = None,
+    compress_data: bool = False,
 ):
     cnv_data = create_cnv_data(
         sample_id=sample_id,
@@ -36,10 +38,17 @@ def generate_html(
         segment_file=segments,
     )
     html_content = render_html(
-        sample_id=sample_id, cnv_data=cnv_data, purity=purity, ploidy=ploidy
+        sample_id=sample_id,
+        cnv_data=cnv_data,
+        purity=purity,
+        ploidy=ploidy,
+        compress_data=compress_data,
     )
     out_file = Path(output_path, f"{sample_id}.spyCNV.html")
     write_file(str(out_file), html_content)
+
+
+DataDict = dict[str, str | list[dict[str, str | int | float | None]] | None]
 
 
 def render_html(
@@ -48,12 +57,13 @@ def render_html(
     genome: str = "hg19",
     purity: float | None = None,
     ploidy: float | None = None,
+    compress_data: bool = False,
 ) -> str:
     """Render html with embedded javascript."""
     env = Environment(loader=PackageLoader(_APP, "templates"))
     template = env.get_template("base.html.jinja2")
 
-    genomespy_js = load_resource(Path("static", "genome-spy_core@0.84.0.js"))
+    genomespy_js = load_resource(Path("static", "genome-spy_core@1.1.0.js"))
     plots = {
         "ideogram": load_resource(Path("plots", "ideogramTrack.js")),
         "logratio": load_resource(Path("plots", "logratioTrack.js")),
@@ -61,7 +71,7 @@ def render_html(
         "geneAnnotation": load_resource(Path("plots", "geneAnnotationTrack.js")),
     }
 
-    data: dict[str, str | list[dict] | None] = {
+    data: DataDict = {
         "cytoband": load_resource(Path("data", f"cytoBand.{genome}.tsv")),
         "refseq": load_resource(
             Path("data", f"refSeq_genes_scored_compressed.{genome}.tsv")
@@ -123,15 +133,32 @@ def render_html(
     if purity is not None or ploidy is not None:
         if purity is None or ploidy is None:
             raise ValueError("purity and ploidy must be provided together")
-        if not 0 < purity <= 1:
+        if not 0 <= purity <= 1:
             raise ValueError("purity must be between 0 and 1")
+
+    data_compressed = bool(compress_data)
+    embedded_data = _encode_data(data, data_compressed)
 
     html = template.render(
         sample_id=sample_id,
         genomespy_js=genomespy_js,
         data=data,
+        embedded_data=embedded_data,
+        data_compressed=data_compressed,
         plots=plots,
         purity=purity,
         ploidy=ploidy,
     )
     return html
+
+
+def _encode_data(data: DataDict, compress: bool) -> str:
+    """Serialize the data as JSON, optionally gzip compressed and base64 encoded.
+
+    The result is embedded in the html and decoded again by the browser.
+    """
+    payload = json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+    if not compress:
+        return payload
+    compressed = gzip.compress(payload.encode("utf-8"))
+    return base64.b64encode(compressed).decode("ascii")

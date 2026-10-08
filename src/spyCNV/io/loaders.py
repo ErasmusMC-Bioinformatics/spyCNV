@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import bisect
 import csv
 import gzip
@@ -7,7 +6,7 @@ import json
 import math
 from importlib.resources import files
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Self, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -38,7 +37,7 @@ class CNVDict(BaseModel):
     baf: list[CNVRecord]
     logratio: list[CNVRecord]
 
-    def filter_logratio_by_baf(self) -> "CNVDict":
+    def filter_logratio_by_baf(self) -> Self:
         baf_positions = {(r.contig, r.start) for r in self.baf}
         return self.model_copy(
             update={
@@ -101,9 +100,7 @@ def load_input(
         reader = csv.DictReader(lines, delimiter="\t")
         return list(reader)
     elif type == "json":
-        return json.loads(content)
-    else:
-        raise ValueError(f"Unsupported type: {type}")
+        return cast(list[dict[str, str]], json.loads(content))
 
 
 def parse_vcf(rows: list[dict[str, str]]) -> list[CNVRecord]:
@@ -213,7 +210,7 @@ def parse_segments(rows: list[dict[str, str]]) -> list[SegmentRecord]:
 def load_exon_data() -> dict[str, list[tuple[int, int, dict[str, str]]]]:
     try:
         manifest_str = load_resource("data/manifest_from_ncbiRefSeq.bed")
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return {}
 
     intervals: dict[str, list[tuple[int, int, dict[str, str]]]] = {}
@@ -254,12 +251,12 @@ def load_exon_data() -> dict[str, list[tuple[int, int, dict[str, str]]]]:
 
 def annotate_records(
     records: list[CNVRecord], manifest: dict[str, list[tuple[int, int, dict[str, str]]]]
-):
+) -> None:
     if not manifest:
         return
 
-    sorted_manifest = {}
-    manifest_starts = {}
+    sorted_manifest: dict[str, list[tuple[int, int, dict[str, str]]]] = {}
+    manifest_starts: dict[str, list[int]] = {}
     for contig, ivs in manifest.items():
         sorted_ivs = sorted(ivs, key=lambda x: x[0])
         sorted_manifest[contig] = sorted_ivs

@@ -130,25 +130,42 @@
         <script>{{ genomespy_js | safe }}</script>
 
         <script>
+         async function try_decompress(data) {
+             let text;
+             try {
+                const binary = atob(data);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const stream = new Response(bytes).body.pipeThrough(new DecompressionStream('gzip'));
+                text = await new Response(stream).text();
+
+             } catch (error) {
+                text = data;
+             }
+            return text;
+         }
+
+         const DATA_COMPRESSED = {{ data_compressed | tojson }};
+         const EMBEDDED_DATA = {{ embedded_data | tojson }};
          {{ plots.ideogram }}
          {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
 
-         const cytobandData = `{{ data.cytoband | safe }}`;
-         const refseqGenes = `{{ data.refseq | safe }}`;
-         
-         const hrd_baf = {{ data.hrd_baf | tojson | default('null', true) }};
-         const hrd_logratio = {{ data.hrd_logratio | tojson | default('null', true) }};
-         const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
-         const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
-         const segments = {{ data.segments | tojson | default('null', true) }};
+         let cytobandData;
+         let refseqGenes;
+         let hrd_baf = null;
+         let hrd_logratio = null;
+         let tso500_baf = null;
+         let tso500_logratio = null;
+         let segments = null;
          const min_logratio = [{ _value: -2.5 }];
          
          let embedResult = null;
          let genomeScale = null;
          let binScale = null;
          let currentDisplayMode = "both";
+         let highlightGeneData = [];
 
          let thresholds = {
              gain: 0.5,
@@ -415,7 +432,10 @@
              container.innerHTML = "";
              const isBin = (currentDisplayMode === "bin");
 
+             highlightGeneData = [];
+
              const namedDataProvider = (name) => {
+                 if (name === "highlight_gene") return highlightGeneData;
                  if (isBin) {
                      if (name === "tso500_logratio_bin") return combinedBinData.tso500Data;
                      if (name === "hrd_logratio_bin") return combinedBinData.hrdData;
@@ -454,7 +474,25 @@
                  }
              });
          }
-         renderPlot();
+
+         async function loadEmbeddedData() {
+             if (!DATA_COMPRESSED) return JSON.parse(EMBEDDED_DATA);
+             return JSON.parse(await try_decompress(EMBEDDED_DATA));
+         }
+
+         (async () => {
+             const data = await loadEmbeddedData();
+             cytobandData = data.cytoband;
+             refseqGenes = data.refseq;
+             hrd_baf = data.hrd_baf ?? null;
+             hrd_logratio = data.hrd_logratio ?? null;
+             tso500_baf = data.tso500_baf ?? null;
+             tso500_logratio = data.tso500_logratio ?? null;
+             segments = data.segments ?? null;
+
+             renderPlot();
+             setTimeout(generateTableData, 500);
+         })();
 
          let tableData = [];
          let grid = null;
@@ -638,23 +676,28 @@
                          if (binScale) {
                              binScale.zoomTo([Math.max(0, minBin - pad), maxBin + pad], true);
                          }
+                         highlightGeneData = [{ startBin: minBin, endBin: maxBin }];
                      } else {
                          const chrRegion = combinedBinData.chromRegions.find(c => c.chrom === cleanChr);
                          if (chrRegion && binScale) {
                              binScale.zoomTo([chrRegion.start - 5, chrRegion.end + 5], true);
                          }
+                         highlightGeneData = [];
                      }
                  } else if (genomeScale) {
                      const zoomDomain = [
-                         { chrom: chr, pos: Math.max(0, start - 15000000) },
+                         { chrom: chr, pos: start - 15000000 },
                          { chrom: chr, pos: end + 15000000 }
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
+                     highlightGeneData = [{ contig: cleanChr, start: start, end: end }];
+                 }
+
+                 if (embedResult) {
+                     embedResult.updateNamedData("highlight_gene", highlightGeneData);
                  }
              });
          }
-         
-         setTimeout(generateTableData, 500);
 
         </script>
     </body>
