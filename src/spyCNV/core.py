@@ -123,7 +123,7 @@ def render_html(
     if purity is not None or ploidy is not None:
         if purity is None or ploidy is None:
             raise ValueError("purity and ploidy must be provided together")
-        if not 0 < purity <= 1:
+        if not 0 <= purity <= 1:
             raise ValueError("purity must be between 0 and 1")
 
     html = template.render(
