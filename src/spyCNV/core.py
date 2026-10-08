@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import base64
 import gzip
 import json
@@ -15,7 +14,7 @@ _PKG = files(_APP)
 
 def write_file(file: str, content: str):
     with open(file, "w") as f:
-        f.write(content)
+        _ = f.write(content)
 
 
 def generate_html(
@@ -137,7 +136,7 @@ def render_html(
         if not 0 <= purity <= 1:
             raise ValueError("purity must be between 0 and 1")
 
-    data_compressed = bool(compress_data) and isinstance(data, dict)
+    data_compressed = bool(compress_data)
     embedded_data = _encode_data(data, data_compressed)
 
     html = template.render(
