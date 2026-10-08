@@ -53,7 +53,7 @@ def render_html(
     env = Environment(loader=PackageLoader(_APP, "templates"))
     template = env.get_template("base.html.jinja2")
 
-    genomespy_js = load_resource(Path("static", "genome-spy_core@0.84.0.js"))
+    genomespy_js = load_resource(Path("static", "genome-spy_core@1.1.0.js"))
     plots = {
         "ideogram": load_resource(Path("plots", "ideogramTrack.js")),
         "logratio": load_resource(Path("plots", "logratioTrack.js")),
