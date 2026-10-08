@@ -49,6 +49,13 @@ def generate(
     output_dir: Annotated[
         str | None, typer.Option("--output-dir", help="Path to output directory")
     ] = ".",
+    compress: Annotated[
+        bool,
+        typer.Option(
+            "--compress",
+            help="Gzip compress the embedded data. The browser transparently decompresses it on load, producing a smaller HTML report.",
+        ),
+    ] = True,
 ):
     typer.echo("Generating HTML report...")
     if not output_dir:
@@ -63,6 +70,7 @@ def generate(
         output_path=output_dir,
         purity=purity,
         ploidy=ploidy,
+        compress_data=compress,
     )
 
     output_file = Path(output_dir, f"{sample_id}.spyCNV.html")

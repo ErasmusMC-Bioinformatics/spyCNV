@@ -130,19 +130,35 @@
         <script>{{ genomespy_js | safe }}</script>
 
         <script>
+         async function try_decompress(data) {
+             let text;
+             try {
+                const binary = atob(data);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const stream = new Response(bytes).body.pipeThrough(new DecompressionStream('gzip'));
+                text = await new Response(stream).text();
+
+             } catch (error) {
+                text = data;
+             }
+            return text;
+         }
+
+         const DATA_COMPRESSED = {{ data_compressed | tojson }};
+         const EMBEDDED_DATA = {{ embedded_data | tojson }};
          {{ plots.ideogram }}
          {{ plots.logratio }}
          {{ plots.baf }}
          {{ plots.geneAnnotation }}
 
-         const cytobandData = `{{ data.cytoband | safe }}`;
-         const refseqGenes = `{{ data.refseq | safe }}`;
-         
-         const hrd_baf = {{ data.hrd_baf | tojson | default('null', true) }};
-         const hrd_logratio = {{ data.hrd_logratio | tojson | default('null', true) }};
-         const tso500_baf = {{ data.tso500_baf | tojson | default('null', true) }};
-         const tso500_logratio = {{ data.tso500_logratio | tojson | default('null', true) }};
-         const segments = {{ data.segments | tojson | default('null', true) }};
+         let cytobandData;
+         let refseqGenes;
+         let hrd_baf = null;
+         let hrd_logratio = null;
+         let tso500_baf = null;
+         let tso500_logratio = null;
+         let segments = null;
          const min_logratio = [{ _value: -2.5 }];
          
          let embedResult = null;
@@ -458,7 +474,25 @@
                  }
              });
          }
-         renderPlot();
+
+         async function loadEmbeddedData() {
+             if (!DATA_COMPRESSED) return JSON.parse(EMBEDDED_DATA);
+             return JSON.parse(await try_decompress(EMBEDDED_DATA));
+         }
+
+         (async () => {
+             const data = await loadEmbeddedData();
+             cytobandData = data.cytoband;
+             refseqGenes = data.refseq;
+             hrd_baf = data.hrd_baf ?? null;
+             hrd_logratio = data.hrd_logratio ?? null;
+             tso500_baf = data.tso500_baf ?? null;
+             tso500_logratio = data.tso500_logratio ?? null;
+             segments = data.segments ?? null;
+
+             renderPlot();
+             setTimeout(generateTableData, 500);
+         })();
 
          let tableData = [];
          let grid = null;
@@ -664,8 +698,6 @@
                  }
              });
          }
-         
-         setTimeout(generateTableData, 500);
 
         </script>
     </body>
