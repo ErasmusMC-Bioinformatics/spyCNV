@@ -142,9 +142,10 @@ def render_html(
     html = template.render(
         sample_id=sample_id,
         genomespy_js=genomespy_js,
-        data=data,
-        embedded_data=embedded_data,
+        has_tso500=bool(data["tso500_baf"] or data["tso500_logratio"]),
+        has_hrd=bool(data["hrd_baf"] or data["hrd_logratio"]),
         data_compressed=data_compressed,
+        embedded_data=embedded_data,
         plots=plots,
         purity=purity,
         ploidy=ploidy,
