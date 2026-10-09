@@ -290,7 +290,7 @@
              };
          }
 
-         const combinedBinData = prepareCombinedBinData(tso500_logratio, hrd_logratio);
+         let combinedBinData = prepareCombinedBinData(tso500_logratio, hrd_logratio);
 
          function classifySegments() {
              if (!segments) return [];
@@ -390,7 +390,7 @@
                      "legend": { "disable": true }
                  },
                  "vconcat": [
-                     logratioBinTrack(hrd_logratio, tso500_logratio, segments, cytobandData, {
+                     logratioBinTrack(hrd_logratio, tso500_logratio, segments, {
                          height: 300,
                          gainThreshold: thresholds.gain,
                          lossThreshold: thresholds.loss,
@@ -490,6 +490,7 @@
              tso500_logratio = data.tso500_logratio ?? null;
              segments = data.segments ?? null;
 
+             combinedBinData = prepareCombinedBinData(tso500_logratio, hrd_logratio);
              renderPlot();
              setTimeout(generateTableData, 500);
          })();
@@ -691,14 +692,12 @@
                      ];
                      genomeScale.zoomTo(zoomDomain, true);
                      highlightGeneData = [{ contig: cleanChr, start: start, end: end }];
-                 }
-
-                 if (embedResult) {
-                     embedResult.updateNamedData("highlight_gene", highlightGeneData);
+                     if (embedResult) {
+                         embedResult.updateNamedData("highlight_gene", highlightGeneData);
+                     }
                  }
              });
          }
-
         </script>
     </body>
 </html>
