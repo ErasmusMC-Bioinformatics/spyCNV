@@ -57,7 +57,7 @@ def render_html(
     genome: str = "hg19",
     purity: float | None = None,
     ploidy: float | None = None,
-    compress_data: bool = False,
+    compress_data: bool = True,
 ) -> str:
     """Render html with embedded javascript."""
     env = Environment(loader=PackageLoader(_APP, "templates"))
